@@ -33,3 +33,15 @@ test('no issues for identical text', () => {
   const t = ['บริการสินเชื่อบ้าน', 'รายละเอียดเพิ่มเติม'];
   assert.deepEqual(compareText(env(t), env([...t])), []);
 });
+
+test('caps missing-block reports at 15 and adds a High summary beyond the cap', () => {
+  const blocks = Array.from({ length: 18 }, (_, i) => `บริการทางการเงินหมายเลขที่แตกต่างกันรายการ${'ก'.repeat(i + 1)}`);
+  const orig = env(blocks);
+  const mig = env([]);
+  const issues = compareText(orig, mig);
+  const missing = issues.filter((i) => /not found on migrated/.test(i.description));
+  const summary = issues.filter((i) => /18 original text blocks missing/.test(i.description));
+  assert.equal(missing.length, 15);
+  assert.equal(summary.length, 1);
+  assert.equal(summary[0].severity, 'High');
+});
