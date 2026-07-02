@@ -37,3 +37,11 @@ test('missing-module issue carries region "main"', () => {
   const issues = compareModules(orig, mig);
   assert.equal(issues[0].region, 'main');
 });
+
+test('missing-module original omits px height so it dedupes across pages', () => {
+  const orig = env([mod('เครื่องมือคำนวณ', [], 2763)]);
+  const mig = env([]);
+  const issues = compareModules(orig, mig);
+  assert.doesNotMatch(issues[0].original, /px/);   // original is dedup key material → no per-page height
+  assert.match(issues[0].description, /px/);         // description still reports the height for humans
+});
