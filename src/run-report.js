@@ -5,7 +5,15 @@ import { mergeIssues } from './report/merge.js';
 import { renderIndex, renderDetail } from './report/html.js';
 import { renderSheetCsv } from './report/csv.js';
 
-const readJson = (file) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null);
+const readJson = (file) => {
+  if (!fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    console.warn(`warn: unreadable issue file ${file}: ${e.message}`);
+    return null;
+  }
+};
 
 fs.mkdirSync(DIRS.report, { recursive: true });
 const pairs = parsePages(fs.readFileSync('pages.csv', 'utf8'));
