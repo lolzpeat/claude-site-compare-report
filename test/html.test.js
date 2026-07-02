@@ -32,7 +32,7 @@ test('detail shows side-by-side screenshots and the issue list', () => {
 const multiResult = {
   pairId: 'my-home', status: 'Failed',
   issues: [
-    { category: 'image-ratio', severity: 'Medium', description: 'squashed hero', location: 'hero' },
+    { category: 'image-ratio', severity: 'Medium', description: 'squashed hero', location: 'hero', original: '1.778', migrated: '1.600' },
     { category: 'broken-link', severity: 'Medium', description: 'dead link B', location: 'footer' },
     { category: 'broken-link', severity: 'High', description: 'dead link A', location: 'nav' },
   ],
@@ -60,4 +60,17 @@ test('index renders per-category count chips', () => {
   const html = renderIndex([{ pair, result: multiResult }]);
   assert.match(html, /broken-link: 2/);
   assert.match(html, /image-ratio: 1/);
+});
+
+test('detail renders Original and Migrated value columns', () => {
+  const html = renderDetail(pair, multiResult);
+  assert.match(html, /<th>Original<\/th><th>Migrated<\/th>/);
+  assert.match(html, /1\.778/);
+  assert.match(html, /1\.600/);
+});
+
+test('detail shows an em-dash when an issue has no original/migrated values', () => {
+  const html = renderDetail(pair, multiResult);
+  // the two broken-link rows have no original/migrated → cells fall back to —
+  assert.ok(html.includes('<td class="val val-orig">—</td>'));
 });

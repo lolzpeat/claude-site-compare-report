@@ -19,6 +19,7 @@ export function compareText(origEnv, migEnv) {
       category: 'text-language', severity: 'Medium',
       description: `Text on original not found on migrated: "${t.slice(0, 120)}"`,
       location: 'text',
+      original: `"${t.slice(0, 120)}"`, migrated: '(not found)',
     });
   }
   if (missing.length > MAX_MISSING_REPORTED) {
@@ -26,6 +27,7 @@ export function compareText(origEnv, migEnv) {
       category: 'text-language', severity: 'High',
       description: `${missing.length} original text blocks missing on migrated (first ${MAX_MISSING_REPORTED} listed)`,
       location: 'page-wide',
+      original: `${missing.length} text blocks`, migrated: `${missing.length} missing`,
     });
   }
 
@@ -36,6 +38,7 @@ export function compareText(origEnv, migEnv) {
       category: 'text-language', severity: 'High',
       description: `Thai/English balance differs: original ${(origRatio * 100).toFixed(0)}% Thai vs migrated ${(migRatio * 100).toFixed(0)}% Thai`,
       location: 'page-wide',
+      original: `${(origRatio * 100).toFixed(0)}% Thai`, migrated: `${(migRatio * 100).toFixed(0)}% Thai`,
     });
   }
   return issues;

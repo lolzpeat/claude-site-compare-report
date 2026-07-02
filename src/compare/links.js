@@ -13,11 +13,13 @@ export function compareLinks(origEnv, migEnv) {
       issues.push({
         category: 'broken-link', severity: 'High',
         description: `Link returns HTTP ${status}: ${url}`, location: textFor(url),
+        original: '—', migrated: `${url} → HTTP ${status}`,
       });
     } else if (status === 0) {
       issues.push({
         category: 'broken-link', severity: 'Medium',
         description: `Link unreachable (fetch failed): ${url}`, location: textFor(url),
+        original: '—', migrated: `${url} → unreachable`,
       });
     }
   }
@@ -40,6 +42,7 @@ export function compareLinks(origEnv, migEnv) {
       category: 'broken-link', severity: 'Medium',
       description: `Link on original not found on migrated (matched by text): "${t}"`,
       location: 'page-wide',
+      original: `"${t}"`, migrated: '(not found)',
     });
   }
   if (missing.length > MAX_MISSING_REPORTED) {
@@ -47,6 +50,7 @@ export function compareLinks(origEnv, migEnv) {
       category: 'broken-link', severity: 'High',
       description: `${missing.length} original links missing on migrated (first ${MAX_MISSING_REPORTED} listed)`,
       location: 'page-wide',
+      original: `${missing.length} original links`, migrated: `${missing.length} missing`,
     });
   }
   return issues;

@@ -11,7 +11,8 @@ export function detectRedirects(origEnv, migEnv) {
       issues.push({
         category: 'broken-link', severity: 'High',
         description: `The ${side} URL redirected: requested ${env.requestedUrl} but landed on ${env.snapshot.finalUrl}`,
-        location: 'page-wide',
+        location: `${side} redirect`,
+        original: `requested: ${env.requestedUrl}`, migrated: `landed: ${env.snapshot.finalUrl}`,
       });
     }
   }

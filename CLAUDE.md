@@ -19,7 +19,8 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 
 - Issue categories: broken-link | image-ratio | text-language | missing-module | layout | capture-failure
 - Severities: High | Medium | Low; statuses: Passed | Failed | "Capture Failed" (never report a failed capture as Passed)
-- AI visual review: write output/issues/ai/<id>.json as {pairId, issues:[{category,severity,description,location}]}; run-report merges it
+- Issue shape: {category, severity, description, location, original?, migrated?}; comparators set original/migrated to the concrete before/after values, report shows them as columns (— when absent)
+- AI visual review: write output/issues/ai/<id>.json as {pairId, issues:[{category,severity,description,location}]}; original/migrated optional; run-report merges it
 
 ## Scale-up
 

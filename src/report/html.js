@@ -19,6 +19,8 @@ const CSS = `
   .chip-Medium{background:#fef3e2;color:#b06a00}
   .chip-Low{background:#eef;color:#334}
   .chip-count{background:#e4e4e4;color:#333}
+  .val{font-size:13px;max-width:340px;word-break:break-word}
+  .val-orig{color:#0a7a2f}.val-mig{color:#b00020}
   .shots{display:flex;gap:12px}
   .shots>div{flex:1;height:80vh;overflow-y:scroll;border:1px solid #ccc}
   .shots img{width:100%;display:block}
@@ -90,9 +92,12 @@ export function renderDetail(pair, result) {
   const groupsHtml = groupIssues(result.issues).map((g) => `
 <details class="cat"${g.hasHigh ? ' open' : ''}>
   <summary>${esc(g.category)} <span class="chip chip-count">${g.items.length}</span> ${severityChips(g.items)}</summary>
-  <table><tr><th>Severity</th><th>Description</th><th>Location</th></tr>${g.items.map((i) => `
+  <table><tr><th>Severity</th><th>Description</th><th>Original</th><th>Migrated</th><th>Location</th></tr>${g.items.map((i) => `
     <tr class="sev-${esc(i.severity)}">
-      <td>${esc(i.severity)}</td><td>${esc(i.description)}</td><td>${esc(i.location)}</td>
+      <td>${esc(i.severity)}</td><td>${esc(i.description)}</td>
+      <td class="val val-orig">${esc(i.original ?? '—')}</td>
+      <td class="val val-mig">${esc(i.migrated ?? '—')}</td>
+      <td>${esc(i.location)}</td>
     </tr>`).join('')}</table>
 </details>`).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(pair.id)}</title>

@@ -36,6 +36,7 @@ export function compareImages(origEnv, migEnv) {
         category: 'image-ratio', severity: 'Medium',
         description: `Rendered aspect ratio differs: original ${ro.toFixed(3)} vs migrated ${rm.toFixed(3)} (${name})`,
         location: name,
+        original: `${ro.toFixed(3)}`, migrated: `${rm.toFixed(3)}`,
       });
       continue; // distortion check would double-report the same root cause
     }
@@ -47,6 +48,7 @@ export function compareImages(origEnv, migEnv) {
         category: 'image-ratio', severity: 'Medium',
         description: `Image distorted on migrated: natural ratio ${natM.toFixed(3)} vs rendered ${rm.toFixed(3)} (${name})`,
         location: name,
+        original: `${ro.toFixed(3)}`, migrated: `${rm.toFixed(3)} (natural ${natM.toFixed(3)})`,
       });
     }
   }
@@ -56,6 +58,7 @@ export function compareImages(origEnv, migEnv) {
       category: 'missing-module', severity: 'Medium',
       description: `Migrated page renders ${migImages.length} images vs ${origImages.length} on original`,
       location: 'page-wide',
+      original: `${origImages.length} images`, migrated: `${migImages.length} images`,
     });
   }
   return issues;

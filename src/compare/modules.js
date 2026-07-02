@@ -25,6 +25,7 @@ export function compareModules(origEnv, migEnv) {
         category: 'missing-module', severity: 'High',
         description: `Module not found on migrated: "${mod.heading || mod.imageFiles[0]}" (~${mod.height}px tall)`,
         location: mod.heading || mod.imageFiles[0],
+        original: `"${mod.heading || mod.imageFiles[0]}" (~${mod.height}px)`, migrated: '(not found)',
       });
     }
   }
