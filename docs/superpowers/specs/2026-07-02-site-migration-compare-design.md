@@ -44,7 +44,7 @@ Playwright using the installed Chrome channel (realistic fingerprint to pass the
    - **Links:** every `<a>` with href, link text, and HTTP status (checked via in-browser fetch to stay behind the WAF).
    - **Images:** every rendered `<img>`/CSS background image with src, natural W×H, rendered W×H, computed aspect ratio.
    - **Text:** headings and paragraphs in document order, with per-block script detection (Thai/Latin) for language checks.
-   - **Module inventory:** the page's top-level sections/components identified by DOM structure and class names, in order.
+   - **Module inventory:** the page's top-level sections/components identified by DOM structure and class names, in order. Because the two platforms use different markup, cross-site module matching in Stage 3 uses content (heading text, image srcs) — never class names.
    - Final URL after redirects.
 
 ### Stage 3 — Compare (deterministic, code only)
@@ -52,7 +52,7 @@ Diff the two snapshots per pair:
 
 - **Broken links:** links on the migrated page with 4xx/5xx status; links present on original but absent on migrated.
 - **Missing modules:** module inventory count/order mismatches.
-- **Image ratio:** aspect-ratio deviation beyond 2% tolerance for corresponding images; natural-vs-rendered distortion.
+- **Image ratio:** aspect-ratio deviation beyond 2% tolerance for corresponding images (matched by document order and src filename similarity, since asset paths differ between platforms); natural-vs-rendered distortion.
 - **Text/language:** normalized text diff (whitespace-collapsed); blocks whose detected script differs between original and migrated (e.g., English text where original was Thai). Known-dynamic blocks (dates, rates, counters) are excluded.
 - **Redirect anomaly:** either URL landing on an unexpected final URL (404 page, homepage) → High severity.
 
