@@ -61,3 +61,22 @@ test('records finalUrl and title', async () => {
   assert.equal(snap.title, 'Fixture Page');
   assert.ok(snap.finalUrl.startsWith(base));
 });
+
+test('segments content on a page with no <main> landmark (chrome excluded)', async () => {
+  const p = await browser.newPage();
+  await p.setContent(`
+    <div class="page">
+      <header><nav><a href="https://x/ir">IR</a></nav><p>ChromeHeaderText</p></header>
+      <section class="hero" style="height:200px"><h2>โปรโมชั่นเด่น</h2></section>
+      <section class="products" style="height:150px"><h2>ผลิตภัณฑ์</h2></section>
+      <div class="spacer" style="height:10px">x</div>
+      <footer style="height:80px"><p>สงวนลิขสิทธิ์</p></footer>
+    </div>
+  `);
+  const snap = await p.evaluate(extractSnapshot);
+  await p.close();
+  // body → div.page (single content wrapper, descend) → 2 real sections; header/nav/footer + 10px spacer excluded
+  assert.equal(snap.modules.length, 2);
+  assert.deepEqual(snap.modules.map((m) => m.heading), ['โปรโมชั่นเด่น', 'ผลิตภัณฑ์']);
+  assert.ok(snap.modules.every((m) => m.region === 'main'));
+});
