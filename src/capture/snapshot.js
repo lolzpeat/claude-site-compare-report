@@ -77,6 +77,8 @@ export function extractSnapshot() {
   // A monolithic content blob (tall + multiple section headings) is split into
   // one module per top-level (h2) section heading so its granularity matches a
   // well-segmented migrated page. h3+ are sub-points within a section, not modules.
+  // Assumes section titles are h2 (true for these bank templates); a blob whose
+  // sections use only h3 won't split and falls back to a single coarse module.
   const modulesFor = (el) => {
     const rect = el.getBoundingClientRect();
     const headings = [...el.querySelectorAll('h2')];
