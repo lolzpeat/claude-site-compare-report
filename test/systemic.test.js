@@ -8,7 +8,7 @@ const page = (pairId, issues, status = 'Failed') => ({ pairId, status, issues })
 // a chrome issue with identical original/migrated values, shared across pages
 const chrome = () => iss('text-language', { description: 'x', original: '"นักลงทุนสัมพันธ์"', migrated: '(not found)' });
 
-test('an issue on >=60% of comparable pages is systemic; a one-off is own', () => {
+test('an issue on >= SYSTEMIC_THRESHOLD of comparable pages is systemic; a one-off is own', () => {
   const shared = chrome();
   const results = [
     page('a', [shared, iss('layout', { description: 'a-only' })]),
