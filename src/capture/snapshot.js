@@ -55,17 +55,20 @@ export function extractSnapshot() {
     if (kids.length === 1 && contentChildren(kids[0]).length >= 1) { node = kids[0]; continue; }
     break;
   }
+  // A module's image identity should be content images, not shared UI icons.
+  const ICON_MAX_PX = 48;
+  const contentImageFile = (img) => {
+    const r = img.getBoundingClientRect();
+    if (Math.min(r.width, r.height) < ICON_MAX_PX) return null;
+    const src = img.currentSrc || img.src || '';
+    const file = src.split('/').pop().split('?')[0].toLowerCase();
+    return file || null;
+  };
   const modules = contentChildren(node).map((el) => ({
     tag: el.tagName.toLowerCase(),
     className: norm(el.className && el.className.toString()).slice(0, 200),
     heading: norm(el.querySelector('h1,h2,h3,h4')?.textContent ?? ''),
-    imageFiles: [...el.querySelectorAll('img')]
-      .map((i) => {
-        const src = i.currentSrc || i.src || '';
-        return src.split('/').pop().split('?')[0].toLowerCase();
-      })
-      .filter(Boolean)
-      .slice(0, 10),
+    imageFiles: [...el.querySelectorAll('img')].map(contentImageFile).filter(Boolean).slice(0, 10),
     height: Math.round(el.getBoundingClientRect().height),
     region: 'main',
   }));

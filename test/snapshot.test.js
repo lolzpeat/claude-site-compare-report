@@ -80,3 +80,22 @@ test('segments content on a page with no <main> landmark (chrome excluded)', asy
   assert.deepEqual(snap.modules.map((m) => m.heading), ['โปรโมชั่นเด่น', 'ผลิตภัณฑ์']);
   assert.ok(snap.modules.every((m) => m.region === 'main'));
 });
+
+test('excludes icon-sized images from module imageFiles (keeps content images)', async () => {
+  const p = await browser.newPage();
+  await p.setContent(`
+    <div class="page">
+      <section class="hero" style="height:120px">
+        <h2>Hero</h2>
+        <img style="width:20px;height:20px" src="https://x/arrow.svg">
+        <img style="width:200px;height:200px" src="https://x/photo.jpg">
+      </section>
+      <section class="more" style="height:120px"><h2>More</h2></section>
+    </div>
+  `);
+  const snap = await p.evaluate(extractSnapshot);
+  await p.close();
+  const hero = snap.modules.find((m) => m.heading === 'Hero');
+  assert.ok(hero, 'hero module present');
+  assert.deepEqual(hero.imageFiles, ['photo.jpg']); // 20px arrow.svg icon excluded, 200px photo kept
+});
