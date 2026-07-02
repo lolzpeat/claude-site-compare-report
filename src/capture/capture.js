@@ -1,4 +1,4 @@
-import { NAV_TIMEOUT_MS, RETRIES } from '../config.js';
+import { NAV_TIMEOUT_MS, RETRIES, MAX_LINK_CHECKS, LINK_CHECK_BATCH } from '../config.js';
 import { extractSnapshot } from './snapshot.js';
 import { preparePage, looksBlocked } from './page-prep.js';
 import { checkLinks } from './link-check.js';
@@ -22,8 +22,8 @@ export async function captureUrl(context, url, shotPath) {
       const origin = new URL(snapshot.finalUrl).origin;
       const sameOrigin = [...new Set(
         snapshot.links.map((l) => l.href).filter((h) => { try { return new URL(h).origin === origin; } catch { return false; } }),
-      )];
-      const linkStatuses = await checkLinks(page, sameOrigin);
+      )].slice(0, MAX_LINK_CHECKS);
+      const linkStatuses = await checkLinks(page, sameOrigin, undefined, LINK_CHECK_BATCH);
 
       await page.close();
       return { requestedUrl: url, snapshot, linkStatuses, blocked: false, error: null };

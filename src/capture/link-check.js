@@ -1,12 +1,12 @@
 // Checks link statuses from INSIDE the page (same-origin fetch passes the WAF).
 // Only pass same-origin URLs; cross-origin fetches return 0 (CORS) by design.
-export async function checkLinks(page, urls, timeoutMs = 10_000) {
-  return page.evaluate(async ({ list, timeoutMs }) => {
+export async function checkLinks(page, urls, timeoutMs = 10_000, batchSize = 5) {
+  return page.evaluate(async ({ list, timeoutMs, batchSize }) => {
     const out = {};
-    const BATCH = 5;
-    for (let i = 0; i < list.length; i += BATCH) {
+    for (let i = 0; i < list.length; i += batchSize) {
+      if (i > 0) await new Promise((r) => setTimeout(r, 400));
       await Promise.all(
-        list.slice(i, i + BATCH).map(async (u) => {
+        list.slice(i, i + batchSize).map(async (u) => {
           try {
             let res = await fetch(u, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(timeoutMs) });
             if (res.status === 405 || res.status === 501) {
@@ -20,5 +20,5 @@ export async function checkLinks(page, urls, timeoutMs = 10_000) {
       );
     }
     return out;
-  }, { list: urls, timeoutMs });
+  }, { list: urls, timeoutMs, batchSize });
 }

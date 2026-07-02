@@ -1,7 +1,8 @@
 import fs from 'node:fs';
+import { chromium } from 'playwright';
 import { parsePages } from './input.js';
-import { DIRS } from './config.js';
-import { launchContext } from './capture/browser.js';
+import { DIRS, INTER_PAGE_DELAY_MS } from './config.js';
+import { newPageContext } from './capture/browser.js';
 import { captureUrl } from './capture/capture.js';
 
 const only = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : null;
@@ -10,8 +11,22 @@ if (pairs.length === 0) { console.error(`No pairs matched${only ? ` --only ${onl
 
 for (const dir of [DIRS.shots, DIRS.snapshots]) fs.mkdirSync(dir, { recursive: true });
 
-const { browser, context } = await launchContext();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Headed system Chrome: both sites block non-browser clients (WAF).
+const browser = await chromium.launch({ channel: 'chrome', headless: false });
+
+let isFirstPair = true;
+let prevPairDidWork = false;
 for (const pair of pairs) {
+  if (!isFirstPair && prevPairDidWork) {
+    console.log(`wait  ${INTER_PAGE_DELAY_MS}ms before next pair`);
+    await sleep(INTER_PAGE_DELAY_MS);
+  }
+  isFirstPair = false;
+
+  const context = await newPageContext(browser);
+  let didWork = false;
   for (const [side, url] of [['orig', pair.originalUrl], ['mig', pair.migratedUrl]]) {
     const snapFile = `${DIRS.snapshots}/${pair.id}-${side}.json`;
     if (fs.existsSync(snapFile) && !JSON.parse(fs.readFileSync(snapFile, 'utf8')).error) {
@@ -22,6 +37,9 @@ for (const pair of pairs) {
     const env = await captureUrl(context, url, `${DIRS.shots}/${pair.id}-${side}.png`);
     fs.writeFileSync(snapFile, JSON.stringify(env, null, 2));
     console.log(env.error ? `FAIL  ${pair.id} ${side}: ${env.error}` : `ok    ${pair.id} ${side}`);
+    didWork = true;
   }
+  await context.close();
+  prevPairDidWork = didWork;
 }
 await browser.close();

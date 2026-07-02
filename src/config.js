@@ -3,6 +3,9 @@ export const NAV_TIMEOUT_MS = 45_000;
 export const RETRIES = 2;
 export const IMAGE_RATIO_TOLERANCE = 0.02;
 export const THAI_RATIO_DELTA = 0.10;
+export const INTER_PAGE_DELAY_MS = 20_000;
+export const MAX_LINK_CHECKS = 50;
+export const LINK_CHECK_BATCH = 2;
 export const DIRS = {
   shots: 'output/shots',
   snapshots: 'output/snapshots',
