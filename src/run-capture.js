@@ -13,33 +13,47 @@ for (const dir of [DIRS.shots, DIRS.snapshots]) fs.mkdirSync(dir, { recursive: t
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const readEnv = (file) => {
+  if (!fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    console.warn(`warn: unreadable snapshot ${file}: ${e.message}`);
+    return null;
+  }
+};
+
 // Headed system Chrome: both sites block non-browser clients (WAF).
 const browser = await chromium.launch({ channel: 'chrome', headless: false });
 
-let isFirstPair = true;
-let prevPairDidWork = false;
-for (const pair of pairs) {
-  if (!isFirstPair && prevPairDidWork) {
-    console.log(`wait  ${INTER_PAGE_DELAY_MS}ms before next pair`);
-    await sleep(INTER_PAGE_DELAY_MS);
-  }
-  isFirstPair = false;
-
-  const context = await newPageContext(browser);
-  let didWork = false;
-  for (const [side, url] of [['orig', pair.originalUrl], ['mig', pair.migratedUrl]]) {
-    const snapFile = `${DIRS.snapshots}/${pair.id}-${side}.json`;
-    if (fs.existsSync(snapFile) && !JSON.parse(fs.readFileSync(snapFile, 'utf8')).error) {
-      console.log(`skip  ${pair.id} ${side} (already captured)`);
-      continue;
+try {
+  let isFirstPair = true;
+  let prevPairDidWork = false;
+  for (const pair of pairs) {
+    if (!isFirstPair && prevPairDidWork) {
+      console.log(`wait  ${INTER_PAGE_DELAY_MS}ms before next pair`);
+      await sleep(INTER_PAGE_DELAY_MS);
     }
-    console.log(`start ${pair.id} ${side} ${url}`);
-    const env = await captureUrl(context, url, `${DIRS.shots}/${pair.id}-${side}.png`);
-    fs.writeFileSync(snapFile, JSON.stringify(env, null, 2));
-    console.log(env.error ? `FAIL  ${pair.id} ${side}: ${env.error}` : `ok    ${pair.id} ${side}`);
-    didWork = true;
+    isFirstPair = false;
+
+    const context = await newPageContext(browser);
+    let didWork = false;
+    for (const [side, url] of [['orig', pair.originalUrl], ['mig', pair.migratedUrl]]) {
+      const snapFile = `${DIRS.snapshots}/${pair.id}-${side}.json`;
+      const snap = readEnv(snapFile);
+      if (snap && !snap.error) {
+        console.log(`skip  ${pair.id} ${side} (already captured)`);
+        continue;
+      }
+      console.log(`start ${pair.id} ${side} ${url}`);
+      const env = await captureUrl(context, url, `${DIRS.shots}/${pair.id}-${side}.png`);
+      fs.writeFileSync(snapFile, JSON.stringify(env, null, 2));
+      console.log(env.error ? `FAIL  ${pair.id} ${side}: ${env.error}` : `ok    ${pair.id} ${side}`);
+      didWork = true;
+    }
+    await context.close();
+    prevPairDidWork = didWork;
   }
-  await context.close();
-  prevPairDidWork = didWork;
+} finally {
+  await browser.close().catch(() => {});
 }
-await browser.close();
