@@ -1,4 +1,5 @@
 import { compareLinks } from './links.js';
+import { compareLinkTargets } from './link-targets.js';
 import { compareImages } from './images.js';
 import { compareText } from './text.js';
 import { compareModules } from './modules.js';
@@ -20,6 +21,7 @@ export function comparePair(origEnv, migEnv) {
   const issues = [
     ...detectRedirects(origEnv, migEnv),
     ...compareLinks(origEnv, migEnv),
+    ...compareLinkTargets(origEnv, migEnv),
     ...compareImages(origEnv, migEnv),
     ...compareText(origEnv, migEnv),
     ...compareModules(origEnv, migEnv),

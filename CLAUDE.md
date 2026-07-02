@@ -17,7 +17,8 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 
 ## Contracts (exact strings — used across modules, tests, and report)
 
-- Issue categories: broken-link | image-ratio | text-language | missing-module | layout | capture-failure
+- Issue categories: broken-link | link-target | image-ratio | text-language | missing-module | layout | capture-failure
+  (link-target = an original link's destination, transformed to its expected migrated URL via /th-TH/→/th/ + lowercase, isn't linked on migrated — catches menu items repointed to the wrong page)
 - Severities: High | Medium | Low; statuses: Passed | Failed | "Capture Failed" (never report a failed capture as Passed)
 - Issue shape: {category, severity, description, location, original?, migrated?}; comparators set original/migrated to the concrete before/after values, report shows them as columns (— when absent)
 - AI visual review: write output/issues/ai/<id>.json as {pairId, issues:[{category,severity,description,location}]}; original/migrated optional; run-report merges it
