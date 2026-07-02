@@ -28,3 +28,36 @@ test('detail shows side-by-side screenshots and the issue list', () => {
   assert.match(html, /HTTP 404/);
   assert.match(html, /High/);
 });
+
+const multiResult = {
+  pairId: 'my-home', status: 'Failed',
+  issues: [
+    { category: 'image-ratio', severity: 'Medium', description: 'squashed hero', location: 'hero' },
+    { category: 'broken-link', severity: 'Medium', description: 'dead link B', location: 'footer' },
+    { category: 'broken-link', severity: 'High', description: 'dead link A', location: 'nav' },
+  ],
+};
+
+test('detail groups issues into one collapsible section per category', () => {
+  const html = renderDetail(pair, multiResult);
+  assert.equal((html.match(/<details class="cat"/g) || []).length, 2);
+  assert.ok(html.includes('<span class="chip chip-count">2</span>'), 'broken-link group shows count chip');
+  assert.match(html, /1 High/);
+  assert.match(html, /1 Medium/);
+});
+
+test('groups with High issues are open and ordered first; High rows sort above Medium', () => {
+  const html = renderDetail(pair, multiResult);
+  const brokenAt = html.indexOf('broken-link');
+  const imageAt = html.indexOf('image-ratio');
+  assert.ok(brokenAt !== -1 && brokenAt < imageAt, 'High-bearing group listed first');
+  assert.ok(html.includes('<details class="cat" open>'), 'High-bearing group open by default');
+  assert.ok(html.includes('<details class="cat">'), 'Medium-only group collapsed');
+  assert.ok(html.indexOf('dead link A') < html.indexOf('dead link B'), 'High severity row sorts first within group');
+});
+
+test('index renders per-category count chips', () => {
+  const html = renderIndex([{ pair, result: multiResult }]);
+  assert.match(html, /broken-link: 2/);
+  assert.match(html, /image-ratio: 1/);
+});
