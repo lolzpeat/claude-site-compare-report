@@ -64,14 +64,40 @@ export function extractSnapshot() {
     const file = src.split('/').pop().split('?')[0].toLowerCase();
     return file || null;
   };
-  const modules = contentChildren(node).map((el) => ({
+  const COARSE_MODULE_MIN_HEIGHT = 1000;
+  const toModule = (el, heading, imgs, height) => ({
     tag: el.tagName.toLowerCase(),
     className: norm(el.className && el.className.toString()).slice(0, 200),
-    heading: norm(el.querySelector('h1,h2,h3,h4')?.textContent ?? ''),
-    imageFiles: [...el.querySelectorAll('img')].map(contentImageFile).filter(Boolean).slice(0, 10),
-    height: Math.round(el.getBoundingClientRect().height),
+    heading: norm(heading),
+    imageFiles: imgs.map(contentImageFile).filter(Boolean).slice(0, 10),
+    height: Math.round(Math.max(0, height)),
     region: 'main',
-  }));
+  });
+
+  // A monolithic content blob (tall + multiple section headings) is split into
+  // one module per h2/h3 so its granularity matches a well-segmented migrated page.
+  const modulesFor = (el) => {
+    const rect = el.getBoundingClientRect();
+    const headings = [...el.querySelectorAll('h2, h3')];
+    if (rect.height >= COARSE_MODULE_MIN_HEIGHT && headings.length >= 2) {
+      const sections = [];
+      for (const n of el.querySelectorAll('h2, h3, img')) { // document order
+        const t = n.tagName.toLowerCase();
+        if (t === 'h2' || t === 'h3') sections.push({ headEl: n, heading: n.textContent, imgs: [] });
+        else if (sections.length) sections[sections.length - 1].imgs.push(n);
+      }
+      return sections.map((s, i) => {
+        const top = s.headEl.getBoundingClientRect().top;
+        const nextTop = i + 1 < sections.length
+          ? sections[i + 1].headEl.getBoundingClientRect().top
+          : rect.bottom;
+        return toModule(el, s.heading, s.imgs, nextTop - top);
+      });
+    }
+    return [toModule(el, el.querySelector('h1,h2,h3,h4')?.textContent ?? '', [...el.querySelectorAll('img')], rect.height)];
+  };
+
+  const modules = contentChildren(node).flatMap(modulesFor);
 
   return { finalUrl: location.href, title: document.title, links, images, textBlocks, modules };
 }
