@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { compareModules } from '../src/compare/modules.js';
 
 const mod = (heading, imageFiles = [], height = 300) =>
-  ({ tag: 'section', className: '', heading, imageFiles, height });
+  ({ tag: 'section', className: '', heading, imageFiles, height, region: 'main' });
 const env = (modules) => ({
   requestedUrl: 'https://x/', blocked: false, error: null, linkStatuses: {},
   snapshot: { finalUrl: 'https://x/', title: '', links: [], images: [], textBlocks: [], modules },
@@ -29,4 +29,11 @@ test('ignores small modules and modules with no identity', () => {
   const orig = env([mod('เล็ก', [], 50), mod('', [], 500)]);
   const mig = env([]);
   assert.deepEqual(compareModules(orig, mig), []);
+});
+
+test('missing-module issue carries region "main"', () => {
+  const orig = env([mod('โปรโมชั่น'), mod('เครื่องมือคำนวณ')]);
+  const mig = env([mod('โปรโมชั่น')]);
+  const issues = compareModules(orig, mig);
+  assert.equal(issues[0].region, 'main');
 });

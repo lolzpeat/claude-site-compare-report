@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { matchImages, compareImages } from '../src/compare/images.js';
 
-const img = (src, nw, nh, rw, rh) =>
-  ({ src, naturalWidth: nw, naturalHeight: nh, renderedWidth: rw, renderedHeight: rh });
+const img = (src, nw, nh, rw, rh, region = 'main') =>
+  ({ src, naturalWidth: nw, naturalHeight: nh, renderedWidth: rw, renderedHeight: rh, region });
 const env = (images) => ({
   requestedUrl: 'https://x/', blocked: false, error: null, linkStatuses: {},
   snapshot: { finalUrl: 'https://x/', title: '', links: [], images, textBlocks: [], modules: [] },
@@ -48,4 +48,26 @@ test('flags significantly fewer images on migrated', () => {
   const m = env([img('https://y/1.jpg', 4, 4, 4, 4)]);
   const issues = compareImages(o, m);
   assert.ok(issues.some((i) => i.category === 'missing-module' && /images/.test(i.description)));
+});
+
+test('ignores non-main images (header/footer logos are not compared)', () => {
+  // 4 chrome logos + 1 main hero on original, only the hero on migrated. Without the
+  // region filter the image-count check (mig < orig-2) fires; with it, both sides are
+  // one main image → no issue. This makes the test a valid RED before the fix.
+  const orig = env([
+    img('https://x/l1.png', 100, 40, 100, 40, 'header'),
+    img('https://x/l2.png', 100, 40, 100, 40, 'header'),
+    img('https://x/l3.png', 100, 40, 100, 40, 'footer'),
+    img('https://x/l4.png', 100, 40, 100, 40, 'footer'),
+    img('https://x/hero.jpg', 1600, 900, 800, 450, 'main'),
+  ]);
+  const mig = env([img('https://y/hero.jpg', 1600, 900, 800, 450, 'main')]);
+  assert.deepEqual(compareImages(orig, mig), []);
+});
+
+test('image-ratio issue carries region "main"', () => {
+  const orig = env([img('https://x/hero.jpg', 1600, 900, 800, 450)]);
+  const mig = env([img('https://y/hero.jpg', 1600, 900, 800, 500)]);
+  const issues = compareImages(orig, mig);
+  assert.equal(issues[0].region, 'main');
 });
