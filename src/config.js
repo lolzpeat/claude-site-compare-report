@@ -5,6 +5,13 @@ export const SETTLE_MS = 800;
 export const RETRIES = 2;
 export const IMAGE_RATIO_TOLERANCE = 0.02;
 export const THAI_RATIO_DELTA = 0.10;
+export const NOT_FOUND_PATTERNS = [
+  /ไม่พบหน้าที่คุณต้องการ/,
+  /\bpage not found\b/i,
+  /\b404\b/,
+];
+export const SYSTEMIC_THRESHOLD = 0.6;
+export const SYSTEMIC_MIN_PAGES = 3;
 export const INTER_PAGE_DELAY_MS = 20_000;
 export const MAX_LINK_CHECKS = 50;
 export const LINK_CHECK_BATCH = 2;
