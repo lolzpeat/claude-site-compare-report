@@ -2,9 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareText } from '../src/compare/text.js';
 
-const env = (textBlocks) => ({
+const env = (blocks) => ({
   requestedUrl: 'https://x/', blocked: false, error: null, linkStatuses: {},
-  snapshot: { finalUrl: 'https://x/', title: '', links: [], images: [], textBlocks, modules: [] },
+  snapshot: {
+    finalUrl: 'https://x/', title: '', links: [], images: [],
+    textBlocks: blocks.map((b) => (typeof b === 'string' ? { text: b, region: 'main' } : b)),
+    modules: [],
+  },
 });
 
 test('flags original text blocks missing on migrated', () => {
@@ -45,4 +49,18 @@ test('caps missing-block reports at 15 and adds a High summary beyond the cap', 
   assert.equal(summary.length, 1);
   assert.equal(summary[0].severity, 'High');
   assert.equal(summary[0].keyHint, 'text-blocks-missing-summary');
+});
+
+test('ignores chrome-region text differences (only main is compared)', () => {
+  const orig = env([{ text: 'เกี่ยวกับธนาคารกรุงเทพ', region: 'header' }, 'บริการสินเชื่อบ้าน']);
+  const mig = env(['บริการสินเชื่อบ้าน']);
+  assert.deepEqual(compareText(orig, mig), []); // the header-only block is not main → not reported
+});
+
+test('a missing main text block carries region "main"', () => {
+  const orig = env(['บริการสินเชื่อบ้าน', 'อัตราดอกเบี้ยพิเศษสำหรับลูกค้าใหม่']);
+  const mig = env(['บริการสินเชื่อบ้าน']);
+  const issues = compareText(orig, mig);
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].region, 'main');
 });
