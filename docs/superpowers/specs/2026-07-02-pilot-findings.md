@@ -53,6 +53,21 @@ Re-captured 20 Save & Invest pages (debentures + mutual funds) with region taggi
 1. Segment main content without relying on `<main>`: e.g. start descent from the largest non-chrome (region==='main') subtree, or pick the content container by excluding header/nav/footer landmarks, before taking module children.
 2. Until (1) lands, stop the module comparator embedding per-page px height in `original`/`description` (use a stable `keyHint`) so the one chrome-wrapper false positive dedupes to a single site-wide row instead of ×18 per-page noise.
 
+## Module-segmentation verification (A1 chrome-aware descent, 2026-07-03)
+
+Implemented A1 (chrome-aware descent: descend through single content wrappers, skipping `header`/`nav`/`footer` landmark subtrees via `regionOf`) + the dedup fix (drop per-page px from the issue `original`). Re-captured the 20 pages (40/40 round 1). Results:
+
+- **The "หน้าแรกลูกค้าบุคคล" whole-page wrapper false module is eliminated** (0 occurrences, was 18/18). Original pages now segment to ≥2 real content modules with the chrome excluded.
+- **The dedup fix is proven on real data.** A generic `arrow-right.svg` icon-identity module recurs on 17 pages but now collapses to **one site-wide row** (was 18 undeduped per-page rows) — `issueKey` is stable now that `original` carries no px.
+- **Residual: module comparison still emits ~16 per-page false-positive `missing-module` issues, caused by asymmetric segmentation granularity, not a regression.** Concretely, `bonds-and-debentures`: original = **1 coarse module** `การลงทุน` (3810px, the whole content area — the original bank DOM is a monolithic `div` with no internal section landmarks) + a 203px icon block; migrated = **8 finely-segmented modules** (`จุดเด่นพันธบัตรตลาดแรก`, `พันธบัตรรัฐบาล`, `ช่องทางการซื้อขาย…`, `ข้อมูลเพิ่มเติม`, `เลือกผลิตภัณฑ์…`, `เครื่องมือช่วยเหลือ`). The AEM (migrated) site has clean structure; the original does not. So the original's coarse heading (`การลงทุน`/`หุ้นกู้`/`กองทุนรวม`) matches nothing on the granular migrated side → reported missing. These fall below the 50% systemic threshold, so they stay per-page own.
+
+**Net:** A1 achieved its scoped goal (kill the wrapper false positive, enable dedup) but did **not** make the module comparator trustworthy on these pages, because structural descent cannot break the original site's flat, landmark-free content `div` into sections — exactly the spec's non-goal (readability-grade extraction). The module comparator's value is capped by the original DOM's flatness.
+
+**Follow-ups (out of the A1 plan's scope — need a design decision):**
+1. **Heading-based segmentation on the original side**: split the one coarse content module by its internal `h2`/`h3` headings so its granularity matches the migrated side, before comparing. Highest-value next step for real module signal.
+2. **Exclude icon-only image identity**: a module identified solely by a shared UI icon (`arrow-right.svg`, small `.svg`) should not count as an identity for `missing-module` — drop tiny/icon images from `imageFiles` or require a heading.
+3. **Or reconsider the module comparator on asymmetric pages**: if (1) is not pursued, consider lowering `missing-module` severity or gating it when original-side module count is 1–2 (coarse), to avoid systematic false positives at scale.
+
 ## Scale-up recommendation
 
 The pipeline works end-to-end and the findings are real, but **hold the 1,460-page run** until: (a) the systemic issues above are triaged with the migration team — every page will fail while chrome is English and heroes are missing, so a full run adds little signal today; (b) the 404-fingerprint and module-extraction tuning items land; (c) pacing is validated on a ~50-page batch. With 20s pacing, 1,460 pages ≈ 2-3 days of sequential capture — plan batches, or relax pacing after confirming rate-limit thresholds.
