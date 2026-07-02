@@ -20,6 +20,7 @@ const CSS = `
   .chip-Medium{background:#fef3e2;color:#b06a00}
   .chip-Low{background:#eef;color:#334}
   .chip-count{background:#e4e4e4;color:#333}
+  .region-tag{background:#eef;color:#334}
   .val{font-size:13px;max-width:340px;word-break:break-word}
   .val-orig{color:#0a7a2f}.val-mig{color:#b00020}
   .shots{display:flex;gap:12px}
@@ -78,7 +79,7 @@ const issueRows = (items) => items.map((i) => `
       <td>${esc(i.severity)}</td><td>${esc(i.description)}</td>
       <td class="val val-orig">${esc(i.original ?? '—')}</td>
       <td class="val val-mig">${esc(i.migrated ?? '—')}</td>
-      <td>${esc(i.location)}</td>
+      <td>${esc(i.location)}${i.region ? ` <span class="chip region-tag">${esc(i.region)}</span>` : ''}</td>
     </tr>`).join('');
 
 const groupTables = (issues) => groupIssues(issues).map((g) => `

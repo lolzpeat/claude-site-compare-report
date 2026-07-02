@@ -83,6 +83,13 @@ test('detail renders only own issues plus a site-wide reference line', () => {
   assert.match(html, /systemic\.html/);
 });
 
+test('detail rows show the issue region as a badge', () => {
+  const own = [{ category: 'layout', severity: 'High', description: 'hero', location: 'hero', region: 'main' }];
+  const html = renderDetail(pair, { ...result, status: 'Failed' }, own, 0);
+  assert.match(html, /region-tag/);
+  assert.match(html, />main</);
+});
+
 test('index shows Own and Site-wide columns and links to the systemic page', () => {
   const rows = [{ pair, result, own: result.issues, systemicHits: 38 }];
   const html = renderIndex(rows, 40);
