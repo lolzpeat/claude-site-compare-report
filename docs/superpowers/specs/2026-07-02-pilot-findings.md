@@ -41,6 +41,18 @@
 7. **Link-check cap keeps nav links, drops content links** (final review): the 50-link cap takes links in document order, so shared mega-menu links crowd out page-specific main-content links; scope extraction to main content before capping.
 8. Smaller hardening for the scale-up pass: validate AI-issue JSON shape on merge, validate pages.csv rows (missing columns, duplicate ids), re-read scrollHeight during lazy-load scroll, align case-sensitivity between link and text matching, remove dead launchContext(), move the image-count `-2` threshold into config.
 
+## Region-tagging verification (deeper-comparators, 20-page Save & Invest batch)
+
+Re-captured 20 Save & Invest pages (debentures + mutual funds) with region tagging + descent segmentation. 40/40 captures succeeded round 1. Results:
+
+- **Region tagging works.** `textBlocks` now split by landmark (e.g. `bonds-and-debentures-orig`: header 29 / nav 99 / main 91 / footer 38, previously all lumped). Links/images/text/link-target issues carry a `region`; content comparators (text/image) now judge `main` only. Across the 20 pages, nearly every issue is region-tagged (only the 3 capture-status issues on the Not-Migrated/Retired pages are region-less, correctly). This resolves the "chrome reported as page-specific content loss" noise for text/images.
+- **Descent segmentation still yields `modules=1` on every original page** — unchanged from the pilot. Root cause: these bank pages have **no `<main>` landmark**, so segmentation starts at `<body>`, whose only >40px child is the whole-page `div.page` wrapper (height ~4243px, heading "หน้าแรกลูกค้าบุคคล"). The single-child-descent never reaches the content sections because `div.page` has multiple children (header/content/footer siblings). Region tagging survives this because `main` is the fallback bucket, but module extraction does not.
+- **Consequence — 18/18 comparable pages emit a false "หน้าแรกลูกค้าบุคคล" missing-module (own, not site-wide).** It fails to aggregate into one site-wide row because the issue embeds the per-page wrapper height in `original`/`description` (2763px, 3964px, 7453px…) → each `issueKey` differs → dedup misses (the exact CLAUDE.md "never embed per-page values in original/migrated" GOTCHA).
+
+**Follow-ups (do not hand-tune in this task — recorded for the module-extraction pass, ref tuning note #2):**
+1. Segment main content without relying on `<main>`: e.g. start descent from the largest non-chrome (region==='main') subtree, or pick the content container by excluding header/nav/footer landmarks, before taking module children.
+2. Until (1) lands, stop the module comparator embedding per-page px height in `original`/`description` (use a stable `keyHint`) so the one chrome-wrapper false positive dedupes to a single site-wide row instead of ×18 per-page noise.
+
 ## Scale-up recommendation
 
 The pipeline works end-to-end and the findings are real, but **hold the 1,460-page run** until: (a) the systemic issues above are triaged with the migration team — every page will fail while chrome is English and heroes are missing, so a full run adds little signal today; (b) the 404-fingerprint and module-extraction tuning items land; (c) pacing is validated on a ~50-page batch. With 20s pacing, 1,460 pages ≈ 2-3 days of sequential capture — plan batches, or relax pacing after confirming rate-limit thresholds.
