@@ -36,23 +36,32 @@ try {
     }
     isFirstPair = false;
 
-    const context = await newPageContext(browser);
-    let didWork = false;
-    for (const [side, url] of [['orig', pair.originalUrl], ['mig', pair.migratedUrl]]) {
+    // Original (www) and migrated (prod-aem) are different hosts with
+    // independent WAF limits, so capture both sides concurrently in their
+    // own contexts. Link statuses are only used for the migrated side.
+    const sides = [
+      ['orig', pair.originalUrl, false],
+      ['mig', pair.migratedUrl, true],
+    ];
+    const results = await Promise.all(sides.map(async ([side, url, checkLinkStatuses]) => {
       const snapFile = `${DIRS.snapshots}/${pair.id}-${side}.json`;
       const snap = readEnv(snapFile);
       if (snap && !snap.error) {
         console.log(`skip  ${pair.id} ${side} (already captured)`);
-        continue;
+        return false;
       }
       console.log(`start ${pair.id} ${side} ${url}`);
-      const env = await captureUrl(context, url, `${DIRS.shots}/${pair.id}-${side}.png`);
-      fs.writeFileSync(snapFile, JSON.stringify(env, null, 2));
-      console.log(env.error ? `FAIL  ${pair.id} ${side}: ${env.error}` : `ok    ${pair.id} ${side}`);
-      didWork = true;
-    }
-    await context.close();
-    prevPairDidWork = didWork;
+      const context = await newPageContext(browser);
+      try {
+        const env = await captureUrl(context, url, `${DIRS.shots}/${pair.id}-${side}.png`, { checkLinkStatuses });
+        fs.writeFileSync(snapFile, JSON.stringify(env, null, 2));
+        console.log(env.error ? `FAIL  ${pair.id} ${side}: ${env.error}` : `ok    ${pair.id} ${side}`);
+      } finally {
+        await context.close().catch(() => {});
+      }
+      return true;
+    }));
+    prevPairDidWork = results.some(Boolean);
   }
 } finally {
   await browser.close().catch(() => {});

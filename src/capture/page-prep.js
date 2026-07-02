@@ -1,9 +1,11 @@
-const COOKIE_SELECTORS = [
+import { NETWORKIDLE_MS, SETTLE_MS } from '../config.js';
+
+const COOKIE_SELECTOR = [
   '#onetrust-accept-btn-handler',
   'button[id*="accept" i]',
   'button[class*="cookie" i]',
   '.cookie-consent button',
-];
+].join(', ');
 
 export function looksBlocked(title, bodyText) {
   const probe = `${title} ${String(bodyText).slice(0, 500)}`;
@@ -15,15 +17,13 @@ export async function preparePage(page) {
     content: '*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important;}',
   }).catch(() => {});
 
-  for (const sel of COOKIE_SELECTORS) {
-    const btn = page.locator(sel).first();
-    try {
-      await btn.waitFor({ state: 'visible', timeout: 1000 });
-      await btn.click({ timeout: 2000 });
-      break;
-    } catch {
-      // banner absent for this selector — try the next one
-    }
+  // One combined probe instead of one 1s wait per selector.
+  try {
+    const btn = page.locator(COOKIE_SELECTOR).first();
+    await btn.waitFor({ state: 'visible', timeout: 1500 });
+    await btn.click({ timeout: 2000 });
+  } catch {
+    // no cookie banner present — proceed
   }
 
   // Scroll through the page to trigger lazy-loaded images, then return to top.
@@ -36,6 +36,6 @@ export async function preparePage(page) {
     }
     window.scrollTo(0, 0);
   });
-  await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-  await page.waitForTimeout(500);
+  await page.waitForLoadState('networkidle', { timeout: NETWORKIDLE_MS }).catch(() => {});
+  await page.waitForTimeout(SETTLE_MS);
 }

@@ -1,5 +1,7 @@
 export const VIEWPORT = { width: 1440, height: 900 };
 export const NAV_TIMEOUT_MS = 45_000;
+export const NETWORKIDLE_MS = 4_000; // bounded settle; bank pages rarely reach true idle, so don't wait long
+export const SETTLE_MS = 800;
 export const RETRIES = 2;
 export const IMAGE_RATIO_TOLERANCE = 0.02;
 export const THAI_RATIO_DELTA = 0.10;

@@ -1,16 +1,16 @@
-import { NAV_TIMEOUT_MS, RETRIES, MAX_LINK_CHECKS, LINK_CHECK_BATCH } from '../config.js';
+import { NAV_TIMEOUT_MS, NETWORKIDLE_MS, RETRIES, MAX_LINK_CHECKS, LINK_CHECK_BATCH } from '../config.js';
 import { extractSnapshot } from './snapshot.js';
 import { preparePage, looksBlocked } from './page-prep.js';
 import { checkLinks } from './link-check.js';
 
-export async function captureUrl(context, url, shotPath) {
+export async function captureUrl(context, url, shotPath, { checkLinkStatuses = true } = {}) {
   let lastError = null;
   let wasBlocked = false;
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
     const page = await context.newPage();
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
-      await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+      await page.waitForLoadState('networkidle', { timeout: NETWORKIDLE_MS }).catch(() => {});
       await preparePage(page);
 
       const snapshot = await page.evaluate(extractSnapshot);
@@ -19,11 +19,15 @@ export async function captureUrl(context, url, shotPath) {
 
       await page.screenshot({ path: shotPath, fullPage: true });
 
-      const origin = new URL(snapshot.finalUrl).origin;
-      const sameOrigin = [...new Set(
-        snapshot.links.map((l) => l.href).filter((h) => { try { return new URL(h).origin === origin; } catch { return false; } }),
-      )].slice(0, MAX_LINK_CHECKS);
-      const linkStatuses = await checkLinks(page, sameOrigin, undefined, LINK_CHECK_BATCH);
+      // Link statuses are only consumed for the migrated side; skip on original to save time.
+      let linkStatuses = {};
+      if (checkLinkStatuses) {
+        const origin = new URL(snapshot.finalUrl).origin;
+        const sameOrigin = [...new Set(
+          snapshot.links.map((l) => l.href).filter((h) => { try { return new URL(h).origin === origin; } catch { return false; } }),
+        )].slice(0, MAX_LINK_CHECKS);
+        linkStatuses = await checkLinks(page, sameOrigin, undefined, LINK_CHECK_BATCH);
+      }
 
       await page.close();
       return { requestedUrl: url, snapshot, linkStatuses, blocked: false, error: null };
