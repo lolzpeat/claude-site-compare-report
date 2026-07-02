@@ -3,7 +3,15 @@ import { parsePages } from './input.js';
 import { DIRS } from './config.js';
 import { comparePair } from './compare/compare.js';
 
-const readEnv = (file) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null);
+const readEnv = (file) => {
+  if (!fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    console.warn(`warn: unreadable snapshot ${file}: ${e.message}`);
+    return null;
+  }
+};
 
 fs.mkdirSync(DIRS.detIssues, { recursive: true });
 const pairs = parsePages(fs.readFileSync('pages.csv', 'utf8'));
