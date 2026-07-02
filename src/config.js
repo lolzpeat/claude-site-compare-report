@@ -10,7 +10,7 @@ export const NOT_FOUND_PATTERNS = [
   /\bpage not found\b/i,
   /\b404\b/,
 ];
-export const SYSTEMIC_THRESHOLD = 0.6;
+export const SYSTEMIC_THRESHOLD = 0.5;
 export const SYSTEMIC_MIN_PAGES = 3;
 export const INTER_PAGE_DELAY_MS = 20_000;
 export const MAX_LINK_CHECKS = 50;

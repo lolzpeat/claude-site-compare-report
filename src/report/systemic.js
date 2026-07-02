@@ -8,6 +8,7 @@ const sevRank = (s) => {
 };
 
 export function issueKey(i) {
+  if (i.keyHint != null && i.keyHint !== '') return `${i.category}|${i.keyHint}`;
   const hasVals = (i.original != null && i.original !== '') || (i.migrated != null && i.migrated !== '');
   return hasVals
     ? `${i.category}|${i.original ?? ''}|${i.migrated ?? ''}`
