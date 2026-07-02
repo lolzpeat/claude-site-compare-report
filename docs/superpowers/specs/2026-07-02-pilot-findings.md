@@ -37,6 +37,9 @@
 3. **Missing-link matching by text** works but counts are inflated by mega-menu links; consider scoping to main-content links at scale.
 4. **Original-site in-page link checks all return 0** (CSP/WAF blocks fetch on www) — harmless today (only migrated statuses drive issues) but means orig-side link health is unchecked.
 5. Cookie banner: add the original site's specific OneTrust selector so orig screenshots are clean.
+6. **Skip link checks on the original side** (final review): only migrated-side statuses drive issues, yet capture spends ~15-30s per original page checking links that all return 0 — at 1,460 pages that's 8-12 wasted hours and extra WAF pressure.
+7. **Link-check cap keeps nav links, drops content links** (final review): the 50-link cap takes links in document order, so shared mega-menu links crowd out page-specific main-content links; scope extraction to main content before capping.
+8. Smaller hardening for the scale-up pass: validate AI-issue JSON shape on merge, validate pages.csv rows (missing columns, duplicate ids), re-read scrollHeight during lazy-load scroll, align case-sensitivity between link and text matching, remove dead launchContext(), move the image-count `-2` threshold into config.
 
 ## Scale-up recommendation
 
