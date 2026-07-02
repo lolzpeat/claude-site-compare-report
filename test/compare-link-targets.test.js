@@ -59,4 +59,5 @@ test('dedupes by destination and caps at 20 with a High summary beyond the cap',
   assert.equal(perLink.length, 20);
   assert.equal(summary.length, 1);
   assert.equal(summary[0].severity, 'High');
+  assert.equal(summary[0].keyHint, 'link-targets-missing-summary');
 });

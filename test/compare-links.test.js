@@ -48,4 +48,5 @@ test('caps missing-link reports at 20 and adds a High summary beyond the cap', (
   assert.equal(summary.length, 1);
   assert.equal(summary[0].severity, 'High');
   assert.equal(issues.length, 21);
+  assert.equal(summary[0].keyHint, 'orig-links-missing-summary');
 });

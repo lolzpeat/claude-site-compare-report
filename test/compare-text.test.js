@@ -44,4 +44,5 @@ test('caps missing-block reports at 15 and adds a High summary beyond the cap', 
   assert.equal(missing.length, 15);
   assert.equal(summary.length, 1);
   assert.equal(summary[0].severity, 'High');
+  assert.equal(summary[0].keyHint, 'text-blocks-missing-summary');
 });

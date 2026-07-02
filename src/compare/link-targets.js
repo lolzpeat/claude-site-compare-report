@@ -55,6 +55,7 @@ export function compareLinkTargets(origEnv, migEnv) {
       description: `${missing.length} original links have no matching destination on migrated (first ${MAX_REPORTED} listed)`,
       location: 'page-wide',
       original: `${missing.length} link targets`, migrated: `${missing.length} unmatched`,
+      keyHint: 'link-targets-missing-summary',
     });
   }
   return issues;

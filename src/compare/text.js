@@ -28,6 +28,7 @@ export function compareText(origEnv, migEnv) {
       description: `${missing.length} original text blocks missing on migrated (first ${MAX_MISSING_REPORTED} listed)`,
       location: 'page-wide',
       original: `${missing.length} text blocks`, migrated: `${missing.length} missing`,
+      keyHint: 'text-blocks-missing-summary',
     });
   }
 

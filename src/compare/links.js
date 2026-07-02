@@ -51,6 +51,7 @@ export function compareLinks(origEnv, migEnv) {
       description: `${missing.length} original links missing on migrated (first ${MAX_MISSING_REPORTED} listed)`,
       location: 'page-wide',
       original: `${missing.length} original links`, migrated: `${missing.length} missing`,
+      keyHint: 'orig-links-missing-summary',
     });
   }
   return issues;
