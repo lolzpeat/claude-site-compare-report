@@ -5,6 +5,7 @@ import { checkLinks } from './link-check.js';
 
 export async function captureUrl(context, url, shotPath) {
   let lastError = null;
+  let wasBlocked = false;
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
     const page = await context.newPage();
     try {
@@ -29,10 +30,11 @@ export async function captureUrl(context, url, shotPath) {
     } catch (e) {
       lastError = e;
       await page.close().catch(() => {});
+      if (/WAF_BLOCKED/.test(String(e))) { wasBlocked = true; break; }
     }
   }
   return {
     requestedUrl: url, snapshot: null, linkStatuses: {},
-    blocked: /WAF_BLOCKED/.test(String(lastError)), error: String(lastError),
+    blocked: wasBlocked, error: String(lastError),
   };
 }
