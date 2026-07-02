@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregateIssues } from '../src/report/systemic.js';
+import { aggregateIssues, issueKey, countSystemicHits } from '../src/report/systemic.js';
 
 const iss = (category, over = {}) => ({ category, severity: 'High', description: 'd', location: 'l', ...over });
 const page = (pairId, issues, status = 'Failed') => ({ pairId, status, issues });
@@ -47,4 +47,18 @@ test('issues without original/migrated dedupe by normalized description', () => 
   const results = [page('a', [ai('Hero  overlay missing')]), page('b', [ai('hero overlay missing')]), page('c', [ai('HERO OVERLAY MISSING')])];
   const { systemic } = aggregateIssues(results);
   assert.equal(systemic.length, 0); // description key is case/space-normalized but NOT case-folded → see note
+});
+
+test('countSystemicHits counts distinct systemic keys, not instances', () => {
+  const dup = { category: 'broken-link', severity: 'High', description: 'd', original: '—', migrated: 'u' };
+  const keys = new Set([issueKey(dup)]);
+  // same issue appearing 3 times counts once; a non-systemic issue is ignored
+  const issues = [dup, { ...dup }, { ...dup }, { category: 'layout', severity: 'Low', description: 'other', original: undefined, migrated: undefined }];
+  assert.equal(countSystemicHits(issues, keys), 1);
+});
+
+test('countSystemicHits never exceeds the number of systemic keys', () => {
+  const a = { category: 'text-language', severity: 'High', description: 'x', original: 'Thai', migrated: 'English' };
+  const keys = new Set([issueKey(a)]);
+  assert.ok(countSystemicHits([a, { ...a }], keys) <= keys.size);
 });

@@ -6,7 +6,7 @@ const FIXED = {
 };
 
 function summarize(own, systemicHits, status) {
-  if (FIXED[status]) return FIXED[status];
+  if (Object.hasOwn(FIXED, status)) return FIXED[status];
   const site = systemicHits > 0 ? ` (+${systemicHits} site-wide)` : '';
   if (own.length === 0) return systemicHits > 0 ? `0 own issues${site}` : '';
   const counts = {};

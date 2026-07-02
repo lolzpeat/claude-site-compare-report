@@ -49,3 +49,12 @@ export function aggregateIssues(results) {
   }
   return { systemic, own };
 }
+
+export function countSystemicHits(issues, systemicKeySet) {
+  const keys = new Set();
+  for (const i of issues) {
+    const k = issueKey(i);
+    if (systemicKeySet.has(k)) keys.add(k);
+  }
+  return keys.size;
+}

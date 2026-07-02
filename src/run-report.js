@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { parsePages } from './input.js';
 import { DIRS } from './config.js';
 import { mergeIssues } from './report/merge.js';
-import { aggregateIssues, issueKey } from './report/systemic.js';
+import { aggregateIssues, issueKey, countSystemicHits } from './report/systemic.js';
 import { renderIndex, renderDetail, renderSystemic } from './report/html.js';
 import { renderSheetCsv } from './report/csv.js';
 
@@ -23,6 +23,7 @@ const pairs = parsePages(fs.readFileSync('pages.csv', 'utf8'));
 const entries = pairs.map((pair) => {
   const det = readJson(`${DIRS.detIssues}/${pair.id}.json`)
     ?? { pairId: pair.id, status: 'Capture Failed', issues: [{ category: 'capture-failure', severity: 'High', description: 'No comparison result found — run run-capture and run-compare first', location: 'page-wide' }] };
+  det.pairId = pair.id;
   const ai = readJson(`${DIRS.aiIssues}/${pair.id}.json`);
   return { pair, result: mergeIssues(det, ai) };
 });
@@ -32,8 +33,8 @@ const systemicKeys = new Set(systemic.map((s) => issueKey(s.issue)));
 const comparableCount = entries.filter((e) => e.result.status === 'Passed' || e.result.status === 'Failed').length;
 
 const rows = entries.map((e) => {
-  const ownIssues = own.get(e.pair.id) ?? e.result.issues;
-  const systemicHits = e.result.issues.filter((i) => systemicKeys.has(issueKey(i))).length;
+  const ownIssues = own.get(e.pair.id) ?? [];
+  const systemicHits = countSystemicHits(e.result.issues, systemicKeys);
   return { ...e, own: ownIssues, systemicHits };
 });
 
