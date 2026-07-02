@@ -100,12 +100,12 @@ test('excludes icon-sized images from module imageFiles (keeps content images)',
   assert.deepEqual(hero.imageFiles, ['photo.jpg']); // 20px arrow.svg icon excluded, 200px photo kept
 });
 
-test('splits a coarse content blob into one module per h2/h3 heading', async () => {
+test('splits a coarse content blob into one module per h2 heading', async () => {
   const p = await browser.newPage();
   await p.setContent(`
     <div class="content" style="height:1200px">
       <h2>Section A</h2><p>aaa</p>
-      <h2>Section B</h2><p>bbb</p>
+      <h2 style="margin-top:600px">Section B</h2><p>bbb</p>
     </div>
   `);
   const snap = await p.evaluate(extractSnapshot);
@@ -113,6 +113,19 @@ test('splits a coarse content blob into one module per h2/h3 heading', async () 
   assert.equal(snap.modules.length, 2);
   assert.deepEqual(snap.modules.map((m) => m.heading), ['Section A', 'Section B']);
   assert.ok(snap.modules.every((m) => m.region === 'main'));
+});
+
+test('splits by h2 only — h3 sub-points stay within their section, not separate modules', async () => {
+  const p = await browser.newPage();
+  await p.setContent(`
+    <div class="content" style="height:1400px">
+      <h2>Section A</h2><h3>Sub A1</h3><p>a</p><h3>Sub A2</h3><p>b</p>
+      <h2 style="margin-top:600px">Section B</h2><p>c</p>
+    </div>
+  `);
+  const snap = await p.evaluate(extractSnapshot);
+  await p.close();
+  assert.deepEqual(snap.modules.map((m) => m.heading), ['Section A', 'Section B']); // h3 Sub A1/A2 not split out
 });
 
 test('does not split a module below the coarse-height gate even with 2 headings', async () => {

@@ -75,24 +75,26 @@ export function extractSnapshot() {
   });
 
   // A monolithic content blob (tall + multiple section headings) is split into
-  // one module per h2/h3 so its granularity matches a well-segmented migrated page.
+  // one module per top-level (h2) section heading so its granularity matches a
+  // well-segmented migrated page. h3+ are sub-points within a section, not modules.
   const modulesFor = (el) => {
     const rect = el.getBoundingClientRect();
-    const headings = [...el.querySelectorAll('h2, h3')];
+    const headings = [...el.querySelectorAll('h2')];
     if (rect.height >= COARSE_MODULE_MIN_HEIGHT && headings.length >= 2) {
       const sections = [];
-      for (const n of el.querySelectorAll('h2, h3, img')) { // document order
-        const t = n.tagName.toLowerCase();
-        if (t === 'h2' || t === 'h3') sections.push({ headEl: n, heading: n.textContent, imgs: [] });
+      for (const n of el.querySelectorAll('h2, img')) { // document order
+        if (n.tagName.toLowerCase() === 'h2') sections.push({ headEl: n, heading: n.textContent, imgs: [] });
         else if (sections.length) sections[sections.length - 1].imgs.push(n);
       }
-      return sections.map((s, i) => {
-        const top = s.headEl.getBoundingClientRect().top;
-        const nextTop = i + 1 < sections.length
-          ? sections[i + 1].headEl.getBoundingClientRect().top
-          : rect.bottom;
-        return toModule(el, s.heading, s.imgs, nextTop - top);
-      });
+      return sections
+        .map((s, i) => {
+          const top = s.headEl.getBoundingClientRect().top;
+          const nextTop = i + 1 < sections.length
+            ? sections[i + 1].headEl.getBoundingClientRect().top
+            : rect.bottom;
+          return toModule(el, s.heading, s.imgs, nextTop - top);
+        })
+        .filter((m) => m.height > MIN_MODULE_HEIGHT); // drop zero/tiny stacked-heading noise
     }
     return [toModule(el, el.querySelector('h1,h2,h3,h4')?.textContent ?? '', [...el.querySelectorAll('img')], rect.height)];
   };
