@@ -22,3 +22,10 @@ test('Capture Failed status is never overwritten', () => {
   const merged = mergeIssues(det, { pairId: 'a', issues: [issue('layout')] });
   assert.equal(merged.status, 'Capture Failed');
 });
+
+test('Not Migrated and Retired on Original statuses are sticky', () => {
+  const nm = mergeIssues({ pairId: 'a', status: 'Not Migrated', issues: [issue('broken-link')] }, { pairId: 'a', issues: [issue('layout')] });
+  assert.equal(nm.status, 'Not Migrated');
+  const ro = mergeIssues({ pairId: 'b', status: 'Retired on Original', issues: [issue('broken-link')] }, null);
+  assert.equal(ro.status, 'Retired on Original');
+});
