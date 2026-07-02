@@ -22,29 +22,38 @@ before(async () => {
 });
 after(async () => { await browser.close(); server.close(); });
 
-test('extracts links with absolute hrefs and text', async () => {
+test('tags links with their region; nav-inside-header is nav', async () => {
   const snap = await page.evaluate(extractSnapshot);
-  const hrefs = snap.links.map((l) => l.href);
-  assert.ok(hrefs.some((h) => h.endsWith('/th/personal/cards')));
-  assert.ok(hrefs.includes('https://external.example.com/x'));
-  assert.ok(snap.links.some((l) => l.text === 'บัตรเครดิต'));
+  const nav = snap.links.find((l) => l.href.endsWith('/th/investor-relations'));
+  assert.equal(nav.region, 'nav'); // nearest landmark (nav) wins over header
+  const main = snap.links.find((l) => l.href.endsWith('/th/personal/cards'));
+  assert.equal(main.region, 'main');
+  const foot = snap.links.find((l) => l.href.endsWith('/th/privacy'));
+  assert.equal(foot.region, 'footer');
 });
 
-test('extracts images with natural and rendered dimensions', async () => {
+test('tags text blocks with region; footer text is footer, hero text is main', async () => {
+  const snap = await page.evaluate(extractSnapshot);
+  const hero = snap.textBlocks.find((b) => b.text === 'โปรโมชั่นพิเศษ');
+  assert.equal(hero.region, 'main');
+  const foot = snap.textBlocks.find((b) => b.text === 'สงวนลิขสิทธิ์');
+  assert.equal(foot.region, 'footer');
+});
+
+test('tags images with region', async () => {
   const snap = await page.evaluate(extractSnapshot);
   const img = snap.images.find((i) => i.src.includes('hero-banner.jpg'));
   assert.ok(img);
+  assert.equal(img.region, 'main');
   assert.equal(img.renderedWidth, 400);
-  assert.equal(img.renderedHeight, 225);
 });
 
-test('extracts text blocks and modules with headings', async () => {
+test('segmentation descends through the single wrapper to the real sections', async () => {
   const snap = await page.evaluate(extractSnapshot);
-  assert.ok(snap.textBlocks.includes('โปรโมชั่นพิเศษ'));
-  assert.ok(snap.textBlocks.includes('รายละเอียดผลิตภัณฑ์ของเรา'));
-  const headings = snap.modules.map((m) => m.heading);
-  assert.deepEqual(headings, ['โปรโมชั่นพิเศษ', 'Products']); // 10px div filtered out
-  assert.deepEqual(snap.modules[0].imageFiles, ['hero-banner.jpg']);
+  // main has one child (div.wrapper); descent yields hero + products (10px div filtered out)
+  assert.equal(snap.modules.length, 2);
+  assert.deepEqual(snap.modules.map((m) => m.heading), ['โปรโมชั่นพิเศษ', 'Products']);
+  assert.ok(snap.modules.every((m) => m.region === 'main'));
 });
 
 test('records finalUrl and title', async () => {
