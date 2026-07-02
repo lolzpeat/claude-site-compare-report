@@ -17,9 +17,12 @@ export async function preparePage(page) {
 
   for (const sel of COOKIE_SELECTORS) {
     const btn = page.locator(sel).first();
-    if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await btn.click({ timeout: 2000 }).catch(() => {});
+    try {
+      await btn.waitFor({ state: 'visible', timeout: 1000 });
+      await btn.click({ timeout: 2000 });
       break;
+    } catch {
+      // banner absent for this selector — try the next one
     }
   }
 

@@ -9,6 +9,7 @@ let server, base, browser, page;
 before(async () => {
   server = http.createServer((req, res) => {
     if (req.url === '/ok') { res.statusCode = 200; res.end('<html><body>ok</body></html>'); }
+    else if (req.url === '/slow') { /* accept but never respond */ }
     else { res.statusCode = 404; res.end('nope'); }
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -17,7 +18,11 @@ before(async () => {
   page = await browser.newPage();
   await page.goto(`${base}/ok`);
 });
-after(async () => { await browser.close(); server.close(); });
+after(async () => {
+  await browser.close();
+  server.closeAllConnections();
+  server.close();
+});
 
 test('reports 200 for live links and 404 for dead links', async () => {
   const statuses = await checkLinks(page, [`${base}/ok`, `${base}/missing`]);
@@ -28,6 +33,11 @@ test('reports 200 for live links and 404 for dead links', async () => {
 test('reports 0 for unreachable hosts', async () => {
   const statuses = await checkLinks(page, ['http://127.0.0.1:1/x']);
   assert.equal(statuses['http://127.0.0.1:1/x'], 0);
+});
+
+test('reports 0 for links that exceed the timeout', async () => {
+  const statuses = await checkLinks(page, [`${base}/slow`], 500);
+  assert.equal(statuses[`${base}/slow`], 0);
 });
 
 test('looksBlocked detects WAF challenge pages', () => {
