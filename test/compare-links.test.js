@@ -36,3 +36,16 @@ test('no issues when links match and are healthy', () => {
   const mig = env([{ href: 'https://y/a', text: 'Home' }], { 'https://y/a': 200 });
   assert.deepEqual(compareLinks(orig, mig), []);
 });
+
+test('caps missing-link reports at 20 and adds a High summary beyond the cap', () => {
+  const origLinks = Array.from({ length: 25 }, (_, i) => ({ href: `https://x/${i}`, text: `Link number ${i}` }));
+  const orig = env(origLinks);
+  const mig = env([]);
+  const issues = compareLinks(orig, mig);
+  const missing = issues.filter((i) => /not found on migrated/.test(i.description));
+  const summary = issues.filter((i) => /25 original links missing/.test(i.description));
+  assert.equal(missing.length, 20);
+  assert.equal(summary.length, 1);
+  assert.equal(summary[0].severity, 'High');
+  assert.equal(issues.length, 21);
+});

@@ -25,11 +25,16 @@ export function compareLinks(origEnv, migEnv) {
   const migTexts = new Set(
     migEnv.snapshot.links.map((l) => normalizeText(l.text).toLowerCase()).filter(Boolean),
   );
-  const missing = [...new Set(
-    origEnv.snapshot.links
-      .map((l) => normalizeText(l.text))
-      .filter((t) => t && !migTexts.has(t.toLowerCase())),
-  )];
+  const seen = new Set();
+  const missing = [];
+  for (const l of origEnv.snapshot.links) {
+    const t = normalizeText(l.text);
+    const key = t.toLowerCase();
+    if (t && !migTexts.has(key) && !seen.has(key)) {
+      seen.add(key);
+      missing.push(t);
+    }
+  }
   for (const t of missing.slice(0, MAX_MISSING_REPORTED)) {
     issues.push({
       category: 'broken-link', severity: 'Medium',
