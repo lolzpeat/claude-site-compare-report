@@ -5,21 +5,22 @@ const MAX_MISSING_REPORTED = 20;
 export function compareLinks(origEnv, migEnv) {
   const issues = [];
 
-  const textFor = (url) =>
-    migEnv.snapshot.links.find((l) => l.href === url)?.text || url;
+  const linkFor = (url) => migEnv.snapshot.links.find((l) => l.href === url);
 
   for (const [url, status] of Object.entries(migEnv.linkStatuses)) {
+    const ml = linkFor(url);
+    const region = ml?.region ?? 'page-wide';
     if (status >= 400) {
       issues.push({
         category: 'broken-link', severity: 'High',
-        description: `Link returns HTTP ${status}: ${url}`, location: textFor(url),
-        original: '—', migrated: `${url} → HTTP ${status}`,
+        description: `Link returns HTTP ${status}: ${url}`, location: ml?.text || url,
+        original: '—', migrated: `${url} → HTTP ${status}`, region,
       });
     } else if (status === 0) {
       issues.push({
         category: 'broken-link', severity: 'Medium',
-        description: `Link unreachable (fetch failed): ${url}`, location: textFor(url),
-        original: '—', migrated: `${url} → unreachable`,
+        description: `Link unreachable (fetch failed): ${url}`, location: ml?.text || url,
+        original: '—', migrated: `${url} → unreachable`, region,
       });
     }
   }
@@ -34,15 +35,15 @@ export function compareLinks(origEnv, migEnv) {
     const key = t.toLowerCase();
     if (t && !migTexts.has(key) && !seen.has(key)) {
       seen.add(key);
-      missing.push(t);
+      missing.push({ text: t, region: l.region ?? 'page-wide' });
     }
   }
-  for (const t of missing.slice(0, MAX_MISSING_REPORTED)) {
+  for (const m of missing.slice(0, MAX_MISSING_REPORTED)) {
     issues.push({
       category: 'broken-link', severity: 'Medium',
-      description: `Link on original not found on migrated (matched by text): "${t}"`,
+      description: `Link on original not found on migrated (matched by text): "${m.text}"`,
       location: 'page-wide',
-      original: `"${t}"`, migrated: '(not found)',
+      original: `"${m.text}"`, migrated: '(not found)', region: m.region,
     });
   }
   if (missing.length > MAX_MISSING_REPORTED) {
@@ -51,7 +52,7 @@ export function compareLinks(origEnv, migEnv) {
       description: `${missing.length} original links missing on migrated (first ${MAX_MISSING_REPORTED} listed)`,
       location: 'page-wide',
       original: `${missing.length} original links`, migrated: `${missing.length} missing`,
-      keyHint: 'orig-links-missing-summary',
+      keyHint: 'orig-links-missing-summary', region: 'page-wide',
     });
   }
   return issues;

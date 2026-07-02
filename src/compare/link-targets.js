@@ -38,7 +38,7 @@ export function compareLinkTargets(origEnv, migEnv) {
     const key = expectedKey(l.href);
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    if (!migTargets.has(key)) missing.push({ text: normalizeText(l.text), key });
+    if (!migTargets.has(key)) missing.push({ text: normalizeText(l.text), key, region: l.region ?? 'page-wide' });
   }
 
   for (const m of missing.slice(0, MAX_REPORTED)) {
@@ -46,7 +46,7 @@ export function compareLinkTargets(origEnv, migEnv) {
       category: 'link-target', severity: 'High',
       description: `Link "${m.text}" on original points to ${m.key} — no matching link on migrated`,
       location: m.text || 'link',
-      original: `${m.key} (expected)`, migrated: 'not linked',
+      original: `${m.key} (expected)`, migrated: 'not linked', region: m.region,
     });
   }
   if (missing.length > MAX_REPORTED) {
@@ -55,7 +55,7 @@ export function compareLinkTargets(origEnv, migEnv) {
       description: `${missing.length} original links have no matching destination on migrated (first ${MAX_REPORTED} listed)`,
       location: 'page-wide',
       original: `${missing.length} link targets`, migrated: `${missing.length} unmatched`,
-      keyHint: 'link-targets-missing-summary',
+      keyHint: 'link-targets-missing-summary', region: 'page-wide',
     });
   }
   return issues;

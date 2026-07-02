@@ -4,7 +4,7 @@ import { compareLinkTargets } from '../src/compare/link-targets.js';
 
 const env = (links) => ({
   requestedUrl: 'https://x/', blocked: false, error: null, linkStatuses: {},
-  snapshot: { finalUrl: 'https://x/', title: '', links, images: [], textBlocks: [], modules: [] },
+  snapshot: { finalUrl: 'https://x/', title: '', links: links.map((l) => ({ region: 'main', ...l })), images: [], textBlocks: [], modules: [] },
 });
 
 const O = 'https://www.bangkokbank.com';
@@ -21,6 +21,13 @@ test('flags an original link whose transformed destination is not linked on migr
   assert.match(issues[0].description, /investor-relations/);
   assert.match(issues[0].original, /investor-relations/);
   assert.equal(issues[0].migrated, 'not linked');
+});
+
+test('a link-target issue carries the original link’s region', () => {
+  const orig = env([{ href: `${O}/th-TH/Investor-Relations`, text: 'นักลงทุนสัมพันธ์', region: 'nav' }]);
+  const mig = env([{ href: `${M}/en/mutual-fund`, text: 'IR' }]);
+  const issues = compareLinkTargets(orig, mig);
+  assert.equal(issues[0].region, 'nav');
 });
 
 test('no issue when migrated links to the expected transformed destination', () => {

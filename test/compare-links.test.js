@@ -4,7 +4,11 @@ import { compareLinks } from '../src/compare/links.js';
 
 const env = (links, statuses = {}) => ({
   requestedUrl: 'https://x/', blocked: false, error: null,
-  snapshot: { finalUrl: 'https://x/', title: '', links, images: [], textBlocks: [], modules: [] },
+  snapshot: {
+    finalUrl: 'https://x/', title: '',
+    links: links.map((l) => ({ region: 'main', ...l })),
+    images: [], textBlocks: [], modules: [],
+  },
   linkStatuses: statuses,
 });
 
@@ -29,6 +33,12 @@ test('flags links present on original but missing on migrated, by text', () => {
   const issues = compareLinks(orig, mig);
   assert.equal(issues.length, 1);
   assert.match(issues[0].description, /สมัครบัตร/);
+});
+
+test('a broken migrated link carries the link’s region', () => {
+  const mig = env([{ href: 'https://y/dead', text: 'Dead', region: 'footer' }], { 'https://y/dead': 404 });
+  const issues = compareLinks(env([]), mig);
+  assert.equal(issues[0].region, 'footer');
 });
 
 test('no issues when links match and are healthy', () => {
