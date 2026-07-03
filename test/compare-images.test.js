@@ -71,3 +71,12 @@ test('image-ratio issue carries region "main"', () => {
   const issues = compareImages(orig, mig);
   assert.equal(issues[0].region, 'main');
 });
+
+test('image-ratio issue carries originalSrc and migratedSrc', () => {
+  const orig = env([img('https://x/hero.jpg', 1600, 900, 800, 450)]);
+  const mig = env([img('https://y/hero.jpg', 1600, 900, 800, 500)]);
+  const issues = compareImages(orig, mig);
+  assert.equal(issues[0].category, 'image-ratio');
+  assert.equal(issues[0].originalSrc, 'https://x/hero.jpg');
+  assert.equal(issues[0].migratedSrc, 'https://y/hero.jpg');
+});

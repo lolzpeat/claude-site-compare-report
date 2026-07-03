@@ -37,6 +37,7 @@ export function compareImages(origEnv, migEnv) {
         description: `Rendered aspect ratio differs: original ${ro.toFixed(3)} vs migrated ${rm.toFixed(3)} (${name})`,
         location: name,
         original: `${ro.toFixed(3)}`, migrated: `${rm.toFixed(3)}`, region: 'main',
+        originalSrc: o.src, migratedSrc: m.src,
       });
       continue; // distortion check would double-report the same root cause
     }
@@ -49,6 +50,7 @@ export function compareImages(origEnv, migEnv) {
         description: `Image distorted on migrated: natural ratio ${natM.toFixed(3)} vs rendered ${rm.toFixed(3)} (${name})`,
         location: name,
         original: `${ro.toFixed(3)}`, migrated: `${rm.toFixed(3)} (natural ${natM.toFixed(3)})`, region: 'main',
+        originalSrc: o.src, migratedSrc: m.src,
       });
     }
   }
