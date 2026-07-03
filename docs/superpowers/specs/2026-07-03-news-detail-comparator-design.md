@@ -201,6 +201,25 @@ Regression: full `npm test` stays green.
   100% on the 3 captured News-Detail pages, no re-capture needed). Defer DOM-scoped
   extraction until the News-Detail corpus (~835 pages in the sheet) is actually scaled.
 
+## Spot-check across the corpus (2026-07-03) — inference holds; #6 not needed
+
+Captured a 12-article sample spread across the news list, spanning **all years
+2560–2569 (2016–2026)** — i.e. old and new markup. `extractArticle` inference was
+correct on every article for **5 of 6 elements**: headline (matched original), date
+(real Thai date on original, `"Invalid Date"` on every migrated article since 2016),
+share (Facebook/X/Line on original, none on migrated), breadcrumb (Thai vs English),
+content image. So the migrated-scoped extraction (#6) is **not required** to scale.
+
+One real false positive surfaced instead: the **content-length** check. The original
+is a flat page whose cookie-consent block leaks into region `main` (~2373 chars,
+constant across pages) and becomes the longest block, so `bodyText` on the original is
+the cookie text, not the article. Comparing migrated-article-length against it fired
+"content much shorter" on 8/12 short/old articles. **Fix:** content check is now
+presence-only (flag migrated body `< CONTENT_MIN_CHARS`); the origin-length comparison
+is dropped. Truncation detection, if ever wanted, needs clean article-body extraction
+(the deferred scoped work below). Content-image detection also misses on some older
+articles, but symmetrically (both sides) so it produces no false positive.
+
 ## Scaling note — migrated-side scoped extraction (deferred, do before the ~835-page run)
 
 A live DOM probe (2026-07-03, both sites via Playwright `channel:'chrome'`) showed the

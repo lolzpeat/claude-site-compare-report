@@ -142,22 +142,19 @@ export function compareNewsDetail(origEnv, migEnv) {
     });
   }
 
-  // Content body — present and not drastically shorter.
+  // Content body — presence only. A length comparison against the original is
+  // unreliable: the original is a flat page whose cookie-consent block leaks into
+  // region 'main' (~2373 chars, constant across pages) and outweighs the real article
+  // when the article is short, so "migrated is shorter than original" false-fires on
+  // older/short articles. Detecting truncation needs clean article-body extraction
+  // (migrated-scoped, deferred). Presence still catches an empty/missing body.
   const migLen = (m.bodyText ?? '').length;
-  const origLen = (o.bodyText ?? '').length;
   if (migLen < CONTENT_MIN_CHARS) {
     issues.push({
       category: 'news-element', severity: 'High',
       description: `News body content missing or too short on migrated (${migLen} chars)`,
       location: 'news:content',
-      original: `${origLen} chars`, migrated: `${migLen} chars`, region: 'main',
-    });
-  } else if (origLen > 0 && migLen < origLen * 0.5) {
-    issues.push({
-      category: 'news-element', severity: 'Medium',
-      description: `News body content much shorter on migrated (${migLen} vs ${origLen} chars)`,
-      location: 'news:content',
-      original: `${origLen} chars`, migrated: `${migLen} chars`, region: 'main',
+      original: `${(o.bodyText ?? '').length} chars`, migrated: `${migLen} chars`, region: 'main',
     });
   }
 
