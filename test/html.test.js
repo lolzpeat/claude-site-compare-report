@@ -11,8 +11,8 @@ const result = {
 test('index lists each pair with status and issue counts, linking to detail', () => {
   const html = renderIndex([{ pair, result, own: result.issues, systemicHits: 0 }], 0);
   assert.match(html, /my-home\.html/);
-  assert.match(html, /Failed/);
-  assert.match(html, /broken-link/);
+  assert.match(html, /ไม่ผ่าน/);       // status Failed → Thai display
+  assert.match(html, /ลิงก์เสีย/);      // broken-link category → Thai display
 });
 
 test('index escapes HTML in data', () => {
@@ -42,14 +42,14 @@ test('detail groups issues into one collapsible section per category', () => {
   const html = renderDetail(pair, multiResult, multiResult.issues, 0);
   assert.equal((html.match(/<details class="cat"/g) || []).length, 2);
   assert.ok(html.includes('<span class="chip chip-count">2</span>'), 'broken-link group shows count chip');
-  assert.match(html, /1 High/);
-  assert.match(html, /1 Medium/);
+  assert.match(html, /1 สูง/);
+  assert.match(html, /1 ปานกลาง/);
 });
 
 test('groups with High issues are open and ordered first; High rows sort above Medium', () => {
   const html = renderDetail(pair, multiResult, multiResult.issues, 0);
-  const brokenAt = html.indexOf('broken-link');
-  const imageAt = html.indexOf('image-ratio');
+  const brokenAt = html.indexOf('ลิงก์เสีย');
+  const imageAt = html.indexOf('สัดส่วนรูปภาพ');
   assert.ok(brokenAt !== -1 && brokenAt < imageAt, 'High-bearing group listed first');
   assert.ok(html.includes('<details class="cat" open>'), 'High-bearing group open by default');
   assert.ok(html.includes('<details class="cat">'), 'Medium-only group collapsed');
@@ -58,13 +58,13 @@ test('groups with High issues are open and ordered first; High rows sort above M
 
 test('index renders per-category count chips', () => {
   const html = renderIndex([{ pair, result: multiResult, own: multiResult.issues, systemicHits: 0 }], 0);
-  assert.match(html, /broken-link: 2/);
-  assert.match(html, /image-ratio: 1/);
+  assert.match(html, /ลิงก์เสีย: 2/);
+  assert.match(html, /สัดส่วนรูปภาพ: 1/);
 });
 
 test('detail renders Original and Migrated value columns', () => {
   const html = renderDetail(pair, multiResult, multiResult.issues, 0);
-  assert.match(html, /<th>Original<\/th><th>Migrated<\/th>/);
+  assert.match(html, /<th>ต้นฉบับ<\/th><th>เว็บที่ย้าย<\/th>/);
   assert.match(html, /1\.778/);
   assert.match(html, /1\.600/);
 });
@@ -79,7 +79,7 @@ test('detail renders only own issues plus a site-wide reference line', () => {
   const own = [{ category: 'layout', severity: 'High', description: 'hero missing', location: 'hero', original: 'title present', migrated: 'blank' }];
   const html = renderDetail(pair, { ...result, status: 'Failed' }, own, 38);
   assert.match(html, /hero missing/);
-  assert.match(html, /38 site-wide/);
+  assert.match(html, /38 ปัญหาระดับทั้งเว็บ/);
   assert.match(html, /systemic\.html/);
 });
 
@@ -87,15 +87,15 @@ test('detail rows show the issue region as a badge', () => {
   const own = [{ category: 'layout', severity: 'High', description: 'hero', location: 'hero', region: 'main' }];
   const html = renderDetail(pair, { ...result, status: 'Failed' }, own, 0);
   assert.match(html, /region-tag/);
-  assert.match(html, />main</);
+  assert.match(html, />เนื้อหาหลัก</);
 });
 
 test('index shows Own and Site-wide columns and links to the systemic page', () => {
   const rows = [{ pair, result, own: result.issues, systemicHits: 38 }];
   const html = renderIndex(rows, 40);
   assert.match(html, /systemic\.html/);
-  assert.match(html, /Own/);
-  assert.match(html, /Site-wide/);
+  assert.match(html, /เฉพาะหน้า/);
+  assert.match(html, /ทั้งเว็บ/);
 });
 
 test('systemic page lists each issue with reach and affected-page links', () => {
@@ -124,4 +124,25 @@ test('non-image issues render no thumbnail', () => {
   const own = [{ category: 'layout', severity: 'High', description: 'x', location: 'hero', region: 'main' }];
   const html = renderDetail(pair, { ...result, status: 'Failed' }, own, 0);
   assert.doesNotMatch(html, /class="thumb"/);
+});
+
+test('display labels are Thai while CSS classes / contract values stay English', () => {
+  const own = [{ category: 'image-ratio', severity: 'High', description: 'd', location: 'hero', region: 'header' }];
+  const html = renderDetail(pair, { ...result, status: 'Not Migrated' }, own, 0);
+  // Thai display text
+  assert.match(html, /สัดส่วนรูปภาพ/);   // category
+  assert.match(html, /ยังไม่ย้าย/);       // status
+  assert.match(html, />สูง</);            // severity cell
+  assert.match(html, /ส่วนหัว/);          // region badge
+  // English CSS classes / contract values preserved
+  assert.match(html, /class="sev-High"/);
+  assert.match(html, /class="chip region-tag"/);
+  assert.match(html, /class="Not"/);       // status class from split(' ')[0]
+});
+
+test('an unmapped enum value falls back to its raw string', () => {
+  const own = [{ category: 'brand-new-cat', severity: 'Critical', description: 'd', location: 'x' }];
+  const html = renderDetail(pair, { ...result, status: 'Failed' }, own, 0);
+  assert.match(html, /brand-new-cat/);   // unknown category → raw
+  assert.match(html, />Critical</);      // unknown severity → raw
 });

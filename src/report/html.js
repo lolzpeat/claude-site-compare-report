@@ -1,6 +1,14 @@
+import { T, TH_HEAD, SEVERITY_LABEL, STATUS_LABEL, CATEGORY_LABEL, REGION_LABEL } from './labels.js';
+
 const esc = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+
+const sevText = (sev) => SEVERITY_LABEL[sev] ?? sev;
+const statusText = (s) => STATUS_LABEL[s] ?? s;
+const catText = (c) => CATEGORY_LABEL[c] ?? c;
+const regionText = (r) => REGION_LABEL[r] ?? r;
+const th = (label) => TH_HEAD[label] ?? label;
 
 const CSS = `
   body{font-family:-apple-system,'Segoe UI',sans-serif;margin:24px;color:#111}
@@ -50,7 +58,7 @@ const categoryChips = (issues) => {
   for (const i of issues) counts[i.category] = (counts[i.category] ?? 0) + 1;
   return Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
-    .map(([c, n]) => `<span class="chip chip-count">${esc(c)}: ${n}</span>`)
+    .map(([c, n]) => `<span class="chip chip-count">${esc(catText(c))}: ${n}</span>`)
     .join(' ') || '—';
 };
 
@@ -58,7 +66,7 @@ const severityChips = (issues) =>
   SEVERITY_ORDER
     .map((sev) => [sev, issues.filter((i) => i.severity === sev).length])
     .filter(([, n]) => n > 0)
-    .map(([sev, n]) => `<span class="chip chip-${esc(sev)}">${n} ${esc(sev)}</span>`)
+    .map(([sev, n]) => `<span class="chip chip-${esc(sev)}">${n} ${esc(sevText(sev))}</span>`)
     .join(' ');
 
 const groupIssues = (issues) => {
@@ -81,16 +89,16 @@ const thumb = (src) => (src && /^https?:/.test(src))
 
 const issueRows = (items) => items.map((i) => `
     <tr class="sev-${esc(i.severity)}">
-      <td>${esc(i.severity)}</td><td>${esc(i.description)}</td>
+      <td>${esc(sevText(i.severity))}</td><td>${esc(i.description)}</td>
       <td class="val val-orig">${esc(i.original ?? '—')}${thumb(i.originalSrc)}</td>
       <td class="val val-mig">${esc(i.migrated ?? '—')}${thumb(i.migratedSrc)}</td>
-      <td>${esc(i.location)}${i.region ? ` <span class="chip region-tag">${esc(i.region)}</span>` : ''}</td>
+      <td>${esc(i.location)}${i.region ? ` <span class="chip region-tag">${esc(regionText(i.region))}</span>` : ''}</td>
     </tr>`).join('');
 
 const groupTables = (issues) => groupIssues(issues).map((g) => `
 <details class="cat"${g.hasHigh ? ' open' : ''}>
-  <summary>${esc(g.category)} <span class="chip chip-count">${g.items.length}</span> ${severityChips(g.items)}</summary>
-  <table><tr><th>Severity</th><th>Description</th><th>Original</th><th>Migrated</th><th>Location</th></tr>${issueRows(g.items)}</table>
+  <summary>${esc(catText(g.category))} <span class="chip chip-count">${g.items.length}</span> ${severityChips(g.items)}</summary>
+  <table><tr><th>${th('Severity')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th><th>${th('Location')}</th></tr>${issueRows(g.items)}</table>
 </details>`).join('');
 
 export function renderIndex(rows, systemicCount) {
@@ -98,39 +106,39 @@ export function renderIndex(rows, systemicCount) {
     <tr>
       <td><a href="${esc(pair.id)}.html">${esc(pair.id)}</a></td>
       <td>${esc(pair.category)} / ${esc(pair.subCategory)}</td>
-      <td class="${esc(result.status.split(' ')[0])}">${esc(result.status)}</td>
+      <td class="${esc(result.status.split(' ')[0])}">${esc(statusText(result.status))}</td>
       <td>${own.length}</td>
       <td>${systemicHits}</td>
       <td>${categoryChips(own)}</td>
     </tr>`).join('');
   const banner = systemicCount > 0
-    ? `<p><strong>${systemicCount} site-wide issues</strong> affect pages across the site — <a href="systemic.html">see the systemic report</a>.</p>`
+    ? `<p><strong>${systemicCount} ${T.bannerA}</strong> <a href="systemic.html">${T.seeSystemic}</a></p>`
     : '';
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Migration Comparison Report</title>
+  return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${T.reportTitle}</title>
 <style>${CSS}</style></head><body>
-<h1>Migration Comparison Report</h1>
+<h1>${T.reportTitle}</h1>
 ${banner}
-<table><tr><th>Page</th><th>Category</th><th>Status</th><th>Own</th><th>Site-wide</th><th>Own by category</th></tr>${trs}</table>
+<table><tr><th>${th('Page')}</th><th>${th('Category')}</th><th>${th('Status')}</th><th>${th('Own')}</th><th>${th('Site-wide')}</th><th>${th('Own by category')}</th></tr>${trs}</table>
 </body></html>`;
 }
 
 export function renderDetail(pair, result, own, systemicHits) {
   const ref = systemicHits > 0
-    ? `<p>+${systemicHits} site-wide issues also affect this page — <a href="systemic.html">see the systemic report</a>.</p>`
+    ? `<p>+${systemicHits} ${T.refA} <a href="systemic.html">${T.seeSystemic}</a></p>`
     : '';
-  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(pair.id)}</title>
+  return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${esc(pair.id)}</title>
 <style>${CSS}</style></head><body>
-<p><a href="index.html">← back</a></p>
-<h1>${esc(pair.id)} — <span class="${esc(result.status.split(' ')[0])}">${esc(result.status)}</span></h1>
-<p>Original: <a href="${esc(pair.originalUrl)}">${esc(pair.originalUrl)}</a><br>
-Migrated: <a href="${esc(pair.migratedUrl)}">${esc(pair.migratedUrl)}</a></p>
+<p><a href="index.html">${T.back}</a></p>
+<h1>${esc(pair.id)} — <span class="${esc(result.status.split(' ')[0])}">${esc(statusText(result.status))}</span></h1>
+<p>${T.original}: <a href="${esc(pair.originalUrl)}">${esc(pair.originalUrl)}</a><br>
+${T.migrated}: <a href="${esc(pair.migratedUrl)}">${esc(pair.migratedUrl)}</a></p>
 <div class="shots">
-  <div><p class="cap">Original</p><img src="../shots/${esc(pair.id)}-orig.png" alt="original"></div>
-  <div><p class="cap">Migrated</p><img src="../shots/${esc(pair.id)}-mig.png" alt="migrated"></div>
+  <div><p class="cap">${T.original}</p><img src="../shots/${esc(pair.id)}-orig.png" alt="original"></div>
+  <div><p class="cap">${T.migrated}</p><img src="../shots/${esc(pair.id)}-mig.png" alt="migrated"></div>
 </div>
-<h2>Own issues (${own.length})</h2>
+<h2>${T.ownIssues} (${own.length})</h2>
 ${ref}
-${groupTables(own) || '<p>No page-specific issues.</p>'}
+${groupTables(own) || `<p>${T.noOwnIssues}</p>`}
 <script>${SYNC_SCROLL}</script>
 </body></html>`;
 }
@@ -148,10 +156,10 @@ export function renderSystemic(systemic, comparableCount) {
 
   const groupsHtml = groups.map((g) => `
 <details class="cat"${g.hasHigh ? ' open' : ''}>
-  <summary>${esc(g.category)} <span class="chip chip-count">${g.entries.length}</span></summary>
-  <table><tr><th>Severity</th><th>Description</th><th>Original</th><th>Migrated</th><th>Reach</th><th>Affected pages</th></tr>${g.entries.map((s) => `
+  <summary>${esc(catText(g.category))} <span class="chip chip-count">${g.entries.length}</span></summary>
+  <table><tr><th>${th('Severity')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th><th>${th('Reach')}</th><th>${th('Affected pages')}</th></tr>${g.entries.map((s) => `
     <tr class="sev-${esc(s.issue.severity)}">
-      <td>${esc(s.issue.severity)}</td><td>${esc(s.issue.description)}</td>
+      <td>${esc(sevText(s.issue.severity))}</td><td>${esc(s.issue.description)}</td>
       <td class="val val-orig">${esc(s.issue.original ?? '—')}</td>
       <td class="val val-mig">${esc(s.issue.migrated ?? '—')}</td>
       <td><span class="chip reach">${s.count} / ${comparableCount}</span></td>
@@ -159,11 +167,11 @@ export function renderSystemic(systemic, comparableCount) {
     </tr>`).join('')}</table>
 </details>`).join('');
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Site-wide (systemic) issues</title>
+  return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${T.siteWideTitle}</title>
 <style>${CSS}</style></head><body>
-<p><a href="index.html">← back</a></p>
-<h1>Site-wide issues (${systemic.length})</h1>
-<p>Issues appearing on at least 60% of comparable pages. Fix these once at the template level.</p>
-${groupsHtml || '<p>No site-wide issues.</p>'}
+<p><a href="index.html">${T.back}</a></p>
+<h1>${T.siteWideTitle} (${systemic.length})</h1>
+<p>${T.systemicExplainer}</p>
+${groupsHtml || `<p>${T.noSiteWide}</p>`}
 </body></html>`;
 }
