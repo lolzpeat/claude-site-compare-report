@@ -14,7 +14,11 @@ const readEnv = (file) => {
 };
 
 fs.mkdirSync(DIRS.detIssues, { recursive: true });
-const pairs = parsePages(fs.readFileSync('pages.csv', 'utf8'));
+const argVal = (flag) => (process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null);
+const onlySheet = argVal('--sheet');
+const sheetOf = (p) => (p.sheet && p.sheet.trim() ? p.sheet.trim() : (p.category || 'Pages'));
+const pairs = parsePages(fs.readFileSync('pages.csv', 'utf8'))
+  .filter((p) => !onlySheet || sheetOf(p) === onlySheet);
 
 for (const pair of pairs) {
   const orig = readEnv(`${DIRS.snapshots}/${pair.id}-orig.json`);

@@ -3,7 +3,7 @@ import { parsePages } from './input.js';
 import { DIRS } from './config.js';
 import { mergeIssues } from './report/merge.js';
 import { aggregateIssues, issueKey, countSystemicHits } from './report/systemic.js';
-import { renderIndex, renderDetail, renderSystemic } from './report/html.js';
+import { renderIndex, renderDetail, renderSystemic, renderLanding } from './report/html.js';
 import { renderCriteria } from './report/criteria.js';
 import { renderSheetCsv } from './report/csv.js';
 
@@ -17,9 +17,17 @@ const readJson = (file) => {
   }
 };
 
+const argVal = (flag) => (process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null);
+const onlySheet = argVal('--sheet');
+
+const slugify = (s) => s.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'sheet';
+const sheetOf = (p) => (p.sheet && p.sheet.trim() ? p.sheet.trim() : (p.category || 'Pages'));
+
 fs.mkdirSync(DIRS.report, { recursive: true });
 fs.mkdirSync(DIRS.detIssues, { recursive: true });
-const pairs = parsePages(fs.readFileSync('pages.csv', 'utf8'));
+
+const pairs = parsePages(fs.readFileSync('pages.csv', 'utf8'))
+  .filter((p) => !onlySheet || sheetOf(p) === onlySheet);
 
 const entries = pairs.map((pair) => {
   const det = readJson(`${DIRS.detIssues}/${pair.id}.json`)
@@ -29,26 +37,49 @@ const entries = pairs.map((pair) => {
   return { pair, result: mergeIssues(det, ai) };
 });
 
-const { systemic, own } = aggregateIssues(entries.map((e) => e.result));
-const systemicKeys = new Set(systemic.map((s) => issueKey(s.issue)));
-const comparableCount = entries.filter((e) => e.result.status === 'Passed' || e.result.status === 'Failed').length;
-
-const rows = entries.map((e) => {
-  const ownIssues = own.get(e.pair.id) ?? [];
-  const systemicHits = countSystemicHits(e.result.issues, systemicKeys);
-  return { ...e, own: ownIssues, systemicHits };
-});
-
-fs.writeFileSync(`${DIRS.report}/index.html`, renderIndex(rows, systemic.length));
-fs.writeFileSync(`${DIRS.report}/criteria.html`, renderCriteria());
-fs.writeFileSync(`${DIRS.report}/systemic.html`, renderSystemic(systemic, comparableCount));
-for (const { pair, result, own: ownIssues, systemicHits } of rows) {
-  fs.writeFileSync(`${DIRS.report}/${pair.id}.html`, renderDetail(pair, result, ownIssues, systemicHits));
+// Group into sheets, preserving first-seen order.
+const groups = new Map();
+for (const e of entries) {
+  const name = sheetOf(e.pair);
+  if (!groups.has(name)) groups.set(name, []);
+  groups.get(name).push(e);
 }
-fs.writeFileSync('output/sheet-update.csv', renderSheetCsv(rows));
-fs.writeFileSync(`${DIRS.detIssues.replace('/det', '')}/systemic.json`, JSON.stringify(systemic, null, 2));
 
-for (const { pair, result, own: ownIssues, systemicHits } of rows) {
-  console.log(`${pair.id}: ${result.status} (${ownIssues.length} own, +${systemicHits} site-wide)`);
+const allRows = [];
+const sheetSummaries = [];
+
+for (const [name, group] of groups) {
+  const slug = slugify(name);
+  const dir = `${DIRS.report}/${slug}`;
+  fs.mkdirSync(dir, { recursive: true });
+
+  const { systemic, own } = aggregateIssues(group.map((e) => e.result));
+  const systemicKeys = new Set(systemic.map((s) => issueKey(s.issue)));
+  const comparableCount = group.filter((e) => e.result.status === 'Passed' || e.result.status === 'Failed').length;
+
+  const rows = group.map((e) => ({
+    ...e,
+    own: own.get(e.pair.id) ?? [],
+    systemicHits: countSystemicHits(e.result.issues, systemicKeys),
+  }));
+
+  fs.writeFileSync(`${dir}/index.html`, renderIndex(rows, systemic.length));
+  fs.writeFileSync(`${dir}/criteria.html`, renderCriteria());
+  fs.writeFileSync(`${dir}/systemic.html`, renderSystemic(systemic, comparableCount));
+  for (const { pair, result, own: ownIssues, systemicHits } of rows) {
+    fs.writeFileSync(`${dir}/${pair.id}.html`, renderDetail(pair, result, ownIssues, systemicHits));
+  }
+  fs.writeFileSync(`${dir}/systemic.json`, JSON.stringify(systemic, null, 2));
+
+  const statusCounts = {};
+  for (const r of rows) statusCounts[r.result.status] = (statusCounts[r.result.status] ?? 0) + 1;
+  sheetSummaries.push({ name, slug, total: rows.length, statusCounts, systemicCount: systemic.length });
+  allRows.push(...rows);
+
+  console.log(`[${name}] ${rows.length} pages, ${systemic.length} site-wide → ${dir}/index.html`);
 }
-console.log(`\n${systemic.length} site-wide issues. Report: ${DIRS.report}/index.html | Systemic: ${DIRS.report}/systemic.html | CSV: output/sheet-update.csv`);
+
+fs.writeFileSync(`${DIRS.report}/index.html`, renderLanding(sheetSummaries));
+fs.writeFileSync('output/sheet-update.csv', renderSheetCsv(allRows));
+
+console.log(`\n${sheetSummaries.length} sheet dashboard(s). Landing: ${DIRS.report}/index.html | CSV: output/sheet-update.csv`);

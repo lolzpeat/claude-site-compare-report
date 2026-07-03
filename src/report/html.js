@@ -328,6 +328,35 @@ export function renderIndex(rows, systemicCount) {
 </body></html>`;
 }
 
+// Top-level landing linking to one dashboard per sheet. Each sheet dashboard lives in
+// its own subdirectory (report/<slug>/index.html), so the relative links inside
+// renderIndex/renderDetail/renderSystemic resolve within that subdir unchanged.
+export function renderLanding(sheets) {
+  const cards = sheets.map((s) => {
+    const chips = STATUS_ORDER.filter((st) => s.statusCounts[st])
+      .map((st) => `<span class="badge b-${tok(st)}">${esc(statusText(st))} ${s.statusCounts[st]}</span>`)
+      .join(' ');
+    const sysline = s.systemicCount > 0
+      ? `<p class="muted">${s.systemicCount} ${T.siteWideTitle}</p>` : '';
+    return `<a class="sheet-card" href="${esc(s.slug)}/index.html">
+      <h2>${esc(s.name)}</h2>
+      <p class="big"><b>${s.total}</b> <span class="muted">หน้า</span></p>
+      <div class="chips">${chips || '<span class="muted">—</span>'}</div>
+      ${sysline}
+    </a>`;
+  }).join('');
+  const extraCss = '.sheet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}'
+    + '.sheet-card{display:block;border:1px solid #d5d8dd;border-radius:10px;padding:20px;text-decoration:none;color:inherit;background:#fff;transition:box-shadow .15s,border-color .15s}'
+    + '.sheet-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:#9aa0a6}'
+    + '.sheet-card h2{margin:0 0 8px;font-size:1.1rem}.sheet-card .big{font-size:1.6rem;margin:.2rem 0}.sheet-card .chips{margin:.4rem 0;display:flex;gap:6px;flex-wrap:wrap}';
+  return `<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${T.reportTitle}</title>
+<style>${CSS}${extraCss}</style></head><body>
+<h1>${T.reportTitle}</h1>
+<p class="toplinks">เลือกชุดหน้า (sheet) เพื่อดูรายงาน</p>
+<div class="sheet-grid">${cards}</div>
+</body></html>`;
+}
+
 export function renderDetail(pair, result, own, systemicHits) {
   const ref = systemicHits > 0
     ? `<p>+${systemicHits} ${T.refA} <a href="systemic.html">${T.seeSystemic}</a></p>`

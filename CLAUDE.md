@@ -6,8 +6,14 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 ## Commands
 
 - `npm test` — node:test suite (must stay green; `node --test test/` breaks on newer Node, use `npm test`)
-- `node src/run-capture.js [--only <id>]` — capture (opens HEADED system Chrome; skips already-captured pages, so re-run to retry failures)
-- `node src/run-compare.js` → `node src/run-report.js` — deterministic diff, then merged HTML report + output/sheet-update.csv
+- `python3 scripts/gen-pages.py > pages.csv` — regenerate pages.csv from the master workbook (input/BBL_pages.xlsx, 2 sheets → 1460 rows). Cols: id,originalUrl,migratedUrl,category,subCategory,sheet. IDs: categorized = migrated path slug (parent-leaf fallback on clash); news = full GUID (news-detail-<guid>).
+- `node src/run-capture.js [--only <id>] [--sheet "<name>"]` — capture (HEADED system Chrome; skips already-captured, re-run to retry failures). Auto cool-down on WAF block (WAF_COOLDOWN_MS ×streak, capped ×3).
+- `node src/run-compare.js [--sheet "<name>"]` → `node src/run-report.js [--sheet "<name>"]` — deterministic diff, then per-sheet HTML dashboards + output/sheet-update.csv
+- Sheets = spreadsheet tabs: `"TH Pages - Categorized"` (632) and `"News & Media Articles"` (828 News-Detail). Use `--sheet` to scope capture/compare/report to one.
+
+## Report structure (per-sheet)
+
+- run-report groups pages by their `sheet` column. Output: `output/report/index.html` = landing (one card per sheet) → `output/report/<slug>/index.html` = that sheet's dashboard, with its own systemic.html, criteria.html, `<id>.html` detail pages, systemic.json. Relative links (index/systemic/criteria/<id>.html) resolve within each subdir — renderIndex/renderDetail/renderSystemic are dir-agnostic; only renderLanding (html.js) is new. Systemic is aggregated per-sheet.
 
 ## WAF gotchas (cost us a failed batch run)
 
@@ -24,8 +30,9 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 
 ## Contracts (exact strings — used across modules, tests, and report)
 
-- Issue categories: broken-link | link-target | image-ratio | text-language | missing-module | layout | capture-failure
+- Issue categories: broken-link | link-target | image-ratio | text-language | missing-module | layout | capture-failure | news-element
   (link-target = an original link's destination, transformed to its expected migrated URL via /th-TH/→/th/ + lowercase, isn't linked on migrated — catches menu items repointed to the wrong page)
+  (news-element = element-level defects on News-Detail articles: headline/date/content/image/breadcrumb/share. src/compare/news-detail.js; comparePair routes News-Detail pages there via isNewsDetail and SKIPS the generic link/text/module comparators — they only false-positive on that template. location = news:headline|news:date|news:content|news:image|news:breadcrumb|news:share)
 - Severities: High | Medium | Low
 - Statuses: Passed | Failed | "Capture Failed" | "Not Migrated" (migrated 404) | "Retired on Original" (original 404); never report a failed capture as Passed. Capture Failed / Not Migrated / Retired on Original are sticky in mergeIssues. 404 detection = looksNotFound (NOT_FOUND_PATTERNS) gate in comparePair.
 - Issue shape: {category, severity, description, location, original?, migrated?}; comparators set original/migrated to the concrete before/after values, report shows them as columns (— when absent)
