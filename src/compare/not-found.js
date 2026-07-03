@@ -4,6 +4,6 @@ import { NOT_FOUND_PATTERNS } from '../config.js';
 // Checks the title and the first few text blocks (fingerprints live near the top).
 export function looksNotFound(snapshot) {
   if (!snapshot) return false;
-  const probe = `${snapshot.title ?? ''} ${(snapshot.textBlocks ?? []).slice(0, 8).join(' ')}`;
+  const probe = `${snapshot.title ?? ''} ${(snapshot.textBlocks ?? []).slice(0, 8).map((b) => b.text ?? '').join(' ')}`;
   return NOT_FOUND_PATTERNS.some((re) => re.test(probe));
 }

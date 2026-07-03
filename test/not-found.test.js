@@ -2,7 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { looksNotFound } from '../src/compare/not-found.js';
 
-const snap = (title, textBlocks = []) => ({ title, textBlocks, finalUrl: 'https://x/', links: [], images: [], modules: [] });
+// Production textBlocks are {text, region} objects — mirror that shape here.
+const snap = (title, textBlocks = []) => ({
+  title,
+  textBlocks: textBlocks.map((t) => (typeof t === 'string' ? { text: t, region: 'main' } : t)),
+  finalUrl: 'https://x/', links: [], images: [], modules: [],
+});
 
 test('detects the Thai 404 fingerprint in title or text', () => {
   assert.equal(looksNotFound(snap('ขออภัย ไม่พบหน้าที่คุณต้องการค้นหา')), true);
