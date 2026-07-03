@@ -117,6 +117,7 @@ export function renderIndex(rows, systemicCount) {
   return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${T.reportTitle}</title>
 <style>${CSS}</style></head><body>
 <h1>${T.reportTitle}</h1>
+<p><a href="criteria.html">เกณฑ์การตรวจสอบ</a></p>
 ${banner}
 <table><tr><th>${th('Page')}</th><th>${th('Category')}</th><th>${th('Status')}</th><th>${th('Own')}</th><th>${th('Site-wide')}</th><th>${th('Own by category')}</th></tr>${trs}</table>
 </body></html>`;

@@ -4,6 +4,7 @@ import { DIRS } from './config.js';
 import { mergeIssues } from './report/merge.js';
 import { aggregateIssues, issueKey, countSystemicHits } from './report/systemic.js';
 import { renderIndex, renderDetail, renderSystemic } from './report/html.js';
+import { renderCriteria } from './report/criteria.js';
 import { renderSheetCsv } from './report/csv.js';
 
 const readJson = (file) => {
@@ -39,6 +40,7 @@ const rows = entries.map((e) => {
 });
 
 fs.writeFileSync(`${DIRS.report}/index.html`, renderIndex(rows, systemic.length));
+fs.writeFileSync(`${DIRS.report}/criteria.html`, renderCriteria());
 fs.writeFileSync(`${DIRS.report}/systemic.html`, renderSystemic(systemic, comparableCount));
 for (const { pair, result, own: ownIssues, systemicHits } of rows) {
   fs.writeFileSync(`${DIRS.report}/${pair.id}.html`, renderDetail(pair, result, ownIssues, systemicHits));

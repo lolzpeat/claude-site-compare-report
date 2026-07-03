@@ -146,3 +146,9 @@ test('an unmapped enum value falls back to its raw string', () => {
   assert.match(html, /brand-new-cat/);   // unknown category → raw
   assert.match(html, />Critical</);      // unknown severity → raw
 });
+
+test('index links to the criteria page', () => {
+  const html = renderIndex([{ pair, result, own: result.issues, systemicHits: 0 }], 0);
+  assert.match(html, /criteria\.html/);
+  assert.match(html, /เกณฑ์การตรวจสอบ/);
+});
