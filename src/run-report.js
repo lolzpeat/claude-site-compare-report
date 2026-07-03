@@ -88,6 +88,8 @@ fs.writeFileSync('output/sheet-update.csv', renderSheetCsv(allRows));
 // makes / land there. .vercelignore trims the data dirs that aren't needed to view.
 fs.writeFileSync('output/index.html',
   '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=report/"><title>redirecting…</title><a href="report/">report/</a>');
-fs.writeFileSync('output/.vercelignore', ['snapshots/', 'issues/', '.omc/', '.DS_Store', ''].join('\n'));
+// shots-full/ holds the full-res PNG originals; scripts/optimize-shots.sh moves them
+// there and leaves downscaled JPEGs (same .png names) in shots/ for a lighter deploy.
+fs.writeFileSync('output/.vercelignore', ['snapshots/', 'issues/', 'shots-full/', '.omc/', '.DS_Store', ''].join('\n'));
 
 console.log(`\n${sheetSummaries.length} sheet dashboard(s). Landing: ${DIRS.report}/index.html | CSV: output/sheet-update.csv`);
