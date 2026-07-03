@@ -152,3 +152,38 @@ test('index links to the criteria page', () => {
   assert.match(html, /criteria\.html/);
   assert.match(html, /เกณฑ์การตรวจสอบ/);
 });
+
+test('index renders the toolbar controls (search, filters, limit, clear, pager)', () => {
+  const html = renderIndex([{ pair, result: multiResult, own: multiResult.issues, systemicHits: 0 }], 0);
+  assert.match(html, /id="q"[^>]*type="search"/);
+  assert.match(html, /id="f-status"/);
+  assert.match(html, /id="f-cat"/);
+  assert.match(html, /id="f-limit"/);
+  assert.match(html, /id="f-clear"/);
+  assert.match(html, /id="pager"/);
+  assert.match(html, /ล้างตัวกรอง/);
+});
+
+test('index rows carry the sheet sequence number and filter/sort data attributes', () => {
+  const rows = [
+    { pair, result, own: result.issues, systemicHits: 3 },
+    { pair: { ...pair, id: 'second-page' }, result: { ...result, status: 'Passed' }, own: [], systemicHits: 0 },
+  ];
+  const html = renderIndex(rows, 0);
+  // sequence from sheet order
+  assert.match(html, /data-seq="1"[\s\S]*data-seq="2"/);
+  // status rail class + filter/search data on the first row
+  assert.match(html, /class="row r-Failed"/);
+  assert.match(html, /data-status="Failed"/);
+  assert.match(html, /data-search="my-home/);
+  // numeric counts feed sortable columns
+  assert.match(html, /data-own="1"/);
+  assert.match(html, /data-sys="3"/);
+});
+
+test('index has sortable ledger headers and clickable status stat chips', () => {
+  const html = renderIndex([{ pair, result, own: result.issues, systemicHits: 0 }], 0);
+  assert.match(html, /<th data-key="seq"[^>]*aria-sort="ascending"/);
+  assert.match(html, /<th data-key="own"/);
+  assert.match(html, /<button type="button" class="stat b-Failed" data-status="Failed">/);
+});
