@@ -1,6 +1,6 @@
 import { T, TH_HEAD, SEVERITY_LABEL, STATUS_LABEL, CATEGORY_LABEL, REGION_LABEL } from './labels.js';
 
-const esc = (s) => String(s ?? '')
+export const esc = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 
@@ -10,7 +10,7 @@ const catText = (c) => CATEGORY_LABEL[c] ?? c;
 const regionText = (r) => REGION_LABEL[r] ?? r;
 const th = (label) => TH_HEAD[label] ?? label;
 
-const CSS = `
+export const CSS = `
   body{font-family:-apple-system,'Segoe UI',sans-serif;margin:24px;color:#111}
   table{border-collapse:collapse;width:100%}
   th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:14px}
