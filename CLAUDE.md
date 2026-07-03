@@ -10,6 +10,7 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 - `node src/run-capture.js [--only <id>] [--sheet "<name>"]` — capture (HEADED system Chrome; skips already-captured, re-run to retry failures). Auto cool-down on WAF block (WAF_COOLDOWN_MS ×streak, capped ×3).
 - `node src/run-compare.js [--sheet "<name>"]` → `node src/run-report.js [--sheet "<name>"]` — deterministic diff, then per-sheet HTML dashboards + output/sheet-update.csv
 - Sheets = spreadsheet tabs: `"TH Pages - Categorized"` (632) and `"News & Media Articles"` (828 News-Detail). Use `--sheet` to scope capture/compare/report to one.
+- `bash scripts/deploy-report.sh` — deploy the static report to Vercel (run `npx vercel login` once first). output/ is gitignored so this is a direct folder deploy of output/ (not git-connected, can't rebuild on Vercel — regeneration needs uncommitted snapshots); entry is /report/. run-report auto-writes output/index.html (redirect) + output/.vercelignore (trims snapshots/, issues/).
 
 ## Report structure (per-sheet)
 

@@ -83,4 +83,11 @@ for (const [name, group] of groups) {
 fs.writeFileSync(`${DIRS.report}/index.html`, renderLanding(sheetSummaries));
 fs.writeFileSync('output/sheet-update.csv', renderSheetCsv(allRows));
 
+// Vercel static-deploy helpers. Deploy root is output/ (so /report/ and /shots/ are
+// siblings — detail pages reference ../../shots). Entry is /report/; this redirect
+// makes / land there. .vercelignore trims the data dirs that aren't needed to view.
+fs.writeFileSync('output/index.html',
+  '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=report/"><title>redirecting…</title><a href="report/">report/</a>');
+fs.writeFileSync('output/.vercelignore', ['snapshots/', 'issues/', '.omc/', '.DS_Store', ''].join('\n'));
+
 console.log(`\n${sheetSummaries.length} sheet dashboard(s). Landing: ${DIRS.report}/index.html | CSV: output/sheet-update.csv`);
