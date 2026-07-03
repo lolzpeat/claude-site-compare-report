@@ -23,6 +23,7 @@ const CSS = `
   .region-tag{background:#eef;color:#334}
   .val{font-size:13px;max-width:340px;word-break:break-word}
   .val-orig{color:#0a7a2f}.val-mig{color:#b00020}
+  .thumb{display:block;max-height:80px;max-width:100%;margin-top:6px;border:1px solid #ccc}
   .shots{display:flex;gap:12px}
   .shots>div{flex:1;height:80vh;overflow-y:scroll;border:1px solid #ccc}
   .shots img{width:100%;display:block}
@@ -74,11 +75,15 @@ const groupIssues = (issues) => {
     .sort((a, b) => (b.hasHigh - a.hasHigh) || (b.items.length - a.items.length));
 };
 
+const thumb = (src) => (src && /^https?:/.test(src))
+  ? `<a href="${esc(src)}" target="_blank" rel="noopener"><img class="thumb" src="${esc(src)}" loading="lazy" alt=""></a>`
+  : '';
+
 const issueRows = (items) => items.map((i) => `
     <tr class="sev-${esc(i.severity)}">
       <td>${esc(i.severity)}</td><td>${esc(i.description)}</td>
-      <td class="val val-orig">${esc(i.original ?? '—')}</td>
-      <td class="val val-mig">${esc(i.migrated ?? '—')}</td>
+      <td class="val val-orig">${esc(i.original ?? '—')}${thumb(i.originalSrc)}</td>
+      <td class="val val-mig">${esc(i.migrated ?? '—')}${thumb(i.migratedSrc)}</td>
       <td>${esc(i.location)}${i.region ? ` <span class="chip region-tag">${esc(i.region)}</span>` : ''}</td>
     </tr>`).join('');
 

@@ -108,3 +108,20 @@ test('systemic page lists each issue with reach and affected-page links', () => 
   assert.match(html, /my-home\.html/);      // affected-page link
   assert.match(html, /English footer/);
 });
+
+test('image-ratio detail rows render original and migrated image thumbnails', () => {
+  const own = [{
+    category: 'image-ratio', severity: 'Medium', description: 'ratio differs',
+    location: 'hero.jpg', original: '1.000', migrated: '4.289',
+    originalSrc: 'https://x/hero.jpg', migratedSrc: 'https://y/hero.jpg', region: 'main',
+  }];
+  const html = renderDetail(pair, { ...result, status: 'Failed' }, own, 0);
+  assert.match(html, /<img class="thumb"[^>]*src="https:\/\/x\/hero\.jpg"/);
+  assert.match(html, /<img class="thumb"[^>]*src="https:\/\/y\/hero\.jpg"/);
+});
+
+test('non-image issues render no thumbnail', () => {
+  const own = [{ category: 'layout', severity: 'High', description: 'x', location: 'hero', region: 'main' }];
+  const html = renderDetail(pair, { ...result, status: 'Failed' }, own, 0);
+  assert.doesNotMatch(html, /class="thumb"/);
+});
