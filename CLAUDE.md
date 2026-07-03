@@ -18,7 +18,8 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 ## WAF gotchas (cost us a failed batch run)
 
 - Both sites block non-browser clients — curl/APIRequestContext fail; only headed `channel:'chrome'` works
-- Batch runs get rate-limited: keep pacing constants in src/config.js (INTER_PAGE_DELAY_MS, MAX_LINK_CHECKS, LINK_CHECK_BATCH); cool-down ~10 min after a block
+- Batch runs get rate-limited: pacing constants in src/config.js (INTER_PAGE_DELAY_MS, MAX_LINK_CHECKS, LINK_CHECK_BATCH). run-capture now auto-pauses WAF_COOLDOWN_MS (×streak, cap ×3) on a block; blocks still appear after ~tens of pages, so full-corpus runs are multi-hour.
+- Closing the headed Chrome window mid-run kills the process ("Target page, context or browser has been closed"); resume retries only failures — don't close Chrome during a run.
 - prod-aem throws transient net::ERR_HTTP2_PROTOCOL_ERROR — just re-run run-capture (resume retries only failures)
 - Capture runs both sides concurrently in separate contexts (www/prod-aem = independent WAF limits); original-side link status checks are skipped (only migrated statuses are used). Settle waits are bounded (NETWORKIDLE_MS) — bank pages never reach true idle.
 
@@ -27,12 +28,14 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 - extractSnapshot runs via page.evaluate — MUST stay self-contained (no imports/closures). Its thresholds are INLINE literals, not config.js: MIN_MODULE_HEIGHT 40 (capture)/80 (compare in modules.js), COARSE_MODULE_MIN_HEIGHT 1000, ICON_MAX_PX 48.
 - snapshot.textBlocks are {text, region} objects (NOT strings) — use `.text`. region ∈ header|nav|footer|main (main = fallback). Content comparators (text/image/module) scope to region==='main'; link comparators stay page-wide.
 - Modules: chrome-aware descent excludes header/nav/footer; a coarse blob (≥1000px, ≥2 h2) is split into one module per h2 (h3 are sub-points). Original pages are flat (no <main>); missing-module still has residual false positives from flat-vs-segmented asymmetry — see docs/superpowers/specs/2026-07-02-pilot-findings.md.
+- Original flat pages leak the cookie-consent block (~2373 chars, identical across pages) into region 'main' — any "longest main block" / text-length heuristic will grab it (why the News-Detail content check is presence-only, not a length diff vs original).
 
 ## Contracts (exact strings — used across modules, tests, and report)
 
 - Issue categories: broken-link | link-target | image-ratio | text-language | missing-module | layout | capture-failure | news-element
   (link-target = an original link's destination, transformed to its expected migrated URL via /th-TH/→/th/ + lowercase, isn't linked on migrated — catches menu items repointed to the wrong page)
   (news-element = element-level defects on News-Detail articles: headline/date/content/image/breadcrumb/share. src/compare/news-detail.js; comparePair routes News-Detail pages there via isNewsDetail and SKIPS the generic link/text/module comparators — they only false-positive on that template. location = news:headline|news:date|news:content|news:image|news:breadcrumb|news:share)
+  (migrated AEM chrome — nav/breadcrumb — renders in English not Thai, a real migration defect that also inflates text-language FPs on the generic comparators; another reason News-Detail routes to its own comparator. Corpus-wide defects confirmed on 200 articles: every migrated news page has date="Invalid Date" + missing share + English breadcrumb)
 - Severities: High | Medium | Low
 - Statuses: Passed | Failed | "Capture Failed" | "Not Migrated" (migrated 404) | "Retired on Original" (original 404); never report a failed capture as Passed. Capture Failed / Not Migrated / Retired on Original are sticky in mergeIssues. 404 detection = looksNotFound (NOT_FOUND_PATTERNS) gate in comparePair.
 - Issue shape: {category, severity, description, location, original?, migrated?}; comparators set original/migrated to the concrete before/after values, report shows them as columns (— when absent)
