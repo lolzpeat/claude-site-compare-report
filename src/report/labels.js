@@ -33,7 +33,7 @@ export const STATUS_LABEL = {
 export const CATEGORY_LABEL = {
   'broken-link': 'ลิงก์เสีย', 'link-target': 'ปลายทางลิงก์', 'image-ratio': 'สัดส่วนรูปภาพ',
   'text-language': 'ข้อความ/ภาษา', 'missing-module': 'โมดูลหาย', 'layout': 'เลย์เอาต์',
-  'capture-failure': 'จับภาพล้มเหลว',
+  'capture-failure': 'จับภาพล้มเหลว', 'news-element': 'องค์ประกอบข่าว',
 };
 
 export const REGION_LABEL = {

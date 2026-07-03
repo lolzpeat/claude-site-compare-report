@@ -2,12 +2,14 @@ import { normalizeText } from '../lib/text-utils.js';
 
 const MAX_MISSING_REPORTED = 20;
 
-export function compareLinks(origEnv, migEnv) {
+// HTTP-status half of the link comparison: report migrated links that 404 / fail to
+// fetch. Shared with the news-detail comparator, which wants this signal WITHOUT the
+// text-transform "missing link" comparison below.
+export function migLinkStatusIssues(migEnv) {
   const issues = [];
-
   const linkFor = (url) => migEnv.snapshot.links.find((l) => l.href === url);
 
-  for (const [url, status] of Object.entries(migEnv.linkStatuses)) {
+  for (const [url, status] of Object.entries(migEnv.linkStatuses ?? {})) {
     const ml = linkFor(url);
     const region = ml?.region ?? 'page-wide';
     if (status >= 400) {
@@ -24,6 +26,11 @@ export function compareLinks(origEnv, migEnv) {
       });
     }
   }
+  return issues;
+}
+
+export function compareLinks(origEnv, migEnv) {
+  const issues = [...migLinkStatusIssues(migEnv)];
 
   const migTexts = new Set(
     migEnv.snapshot.links.map((l) => normalizeText(l.text).toLowerCase()).filter(Boolean),

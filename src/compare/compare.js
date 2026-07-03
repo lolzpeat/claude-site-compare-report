@@ -5,6 +5,7 @@ import { compareText } from './text.js';
 import { compareModules } from './modules.js';
 import { detectRedirects } from './redirect.js';
 import { looksNotFound } from './not-found.js';
+import { isNewsDetail, compareNewsDetail } from './news-detail.js';
 
 export function comparePair(origEnv, migEnv) {
   const captureIssues = [];
@@ -45,6 +46,18 @@ export function comparePair(origEnv, migEnv) {
         original: '404 (page retired)', migrated: 'page exists',
       }],
     };
+  }
+
+  // News-Detail articles use an element-level comparison instead of the generic
+  // link/text/module comparators, which only produce false positives on this template
+  // (the News-Detail?id=GUID → /<year>/<guid> URL transform can't be modelled, and the
+  // flat original page mis-scopes chrome text into 'main').
+  if (isNewsDetail(origEnv, migEnv)) {
+    const issues = [
+      ...detectRedirects(origEnv, migEnv),
+      ...compareNewsDetail(origEnv, migEnv),
+    ];
+    return { status: issues.length === 0 ? 'Passed' : 'Failed', issues };
   }
 
   const issues = [

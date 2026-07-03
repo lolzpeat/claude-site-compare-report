@@ -57,6 +57,13 @@ const CRITERIA = [
     threshold: 'ถ้าจับภาพไม่ได้ หน้าถูกทำเครื่องหมาย “จับภาพไม่สำเร็จ” (ไม่รายงานว่าผ่าน)',
     sev: 'สูง',
   },
+  {
+    cat: 'news-element',
+    check: 'หน้าข่าว (News-Detail) มีองค์ประกอบครบไหม: หัวข้อข่าว, วันที่, เนื้อหา, รูปประกอบ, breadcrumb, ปุ่มแชร์',
+    method: 'เฉพาะหน้า News-Detail (จับจาก URL …/news-and-media/<ปี>/<guid>) — ใช้การตรวจระดับองค์ประกอบแทน link/text/module comparator ทั่วไป (ซึ่งให้ false positive บนเทมเพลตนี้). หัวข้อ+วันที่=เทียบค่ากับต้นฉบับ; รูปประกอบ=เทียบชื่อไฟล์เฉพาะรูปในบทความ (modules[].imageFiles); breadcrumb/ปุ่มแชร์/เนื้อหา=เช็คว่ามี',
+    threshold: 'วันที่ขึ้น “Invalid Date”/หาย = สูง; หัวข้อ/เนื้อหาหาย = สูง; รูป/ปุ่มแชร์/breadcrumb หาย = ปานกลาง; breadcrumb ไม่เป็นไทย = ต่ำ',
+    sev: 'สูง / ปานกลาง / ต่ำ',
+  },
 ];
 
 const CONFIG_ROWS = [
