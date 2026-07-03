@@ -11,9 +11,10 @@
 # ../../shots). Entry is https://<url>/report/ — the / redirect (output/index.html,
 # written by run-report) forwards there.
 set -euo pipefail
+SCOPE="${1:-praponts-projects}"   # Vercel team; the account has no default in non-interactive mode
 cd "$(dirname "$0")/.."
 
 node src/run-report.js   # refresh dashboards + the / redirect + .vercelignore
 
 cd output
-exec npx vercel deploy --prod --yes
+exec npx vercel deploy --prod --yes --scope "$SCOPE"
