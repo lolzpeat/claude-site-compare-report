@@ -47,7 +47,7 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 
 - UI is Thai. labels.js maps English contract values (severity/status/category/region) → Thai DISPLAY only; keep contract values + CSS class names English. html.js exports esc + CSS (reused by criteria.js).
 - index.html is a client-side dashboard (search/filter/sort/pagination, baked-in vanilla JS). criteria.html documents criteria/thresholds from LIVE config imports. run-report is pure render — re-run it (no re-capture) after compare/report code changes.
-- Browser-test the report via `python3 -m http.server` in output/report then drive localhost — file:// is blocked by the Chrome extension AND the Playwright MCP.
+- Browser-test the report via `python3 -m http.server` in **output/** (not output/report) then open localhost:PORT/report/ — screenshots live in output/shots, which detail pages reference as `../../shots/…` (they sit in report/<slug>/); serving from output/report puts shots outside the web root so images 404. file:// is blocked by the Chrome extension AND the Playwright MCP.
 
 ## AI visual review
 

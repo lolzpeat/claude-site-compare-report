@@ -357,7 +357,10 @@ export function renderLanding(sheets) {
 </body></html>`;
 }
 
-export function renderDetail(pair, result, own, systemicHits) {
+// shotsBase is the relative path from the detail page to output/shots. Default '../shots'
+// suits a detail page one level under output/ (the legacy flat layout); the per-sheet
+// dashboards nest detail pages in report/<slug>/, so run-report passes '../../shots'.
+export function renderDetail(pair, result, own, systemicHits, shotsBase = '../shots') {
   const ref = systemicHits > 0
     ? `<p>+${systemicHits} ${T.refA} <a href="systemic.html">${T.seeSystemic}</a></p>`
     : '';
@@ -368,8 +371,8 @@ export function renderDetail(pair, result, own, systemicHits) {
 <p>${T.original}: <a href="${esc(pair.originalUrl)}">${esc(pair.originalUrl)}</a><br>
 ${T.migrated}: <a href="${esc(pair.migratedUrl)}">${esc(pair.migratedUrl)}</a></p>
 <div class="shots">
-  <div><p class="cap">${T.original}</p><img src="../shots/${esc(pair.id)}-orig.png" alt="original"></div>
-  <div><p class="cap">${T.migrated}</p><img src="../shots/${esc(pair.id)}-mig.png" alt="migrated"></div>
+  <div><p class="cap">${T.original}</p><img src="${esc(shotsBase)}/${esc(pair.id)}-orig.png" alt="original"></div>
+  <div><p class="cap">${T.migrated}</p><img src="${esc(shotsBase)}/${esc(pair.id)}-mig.png" alt="migrated"></div>
 </div>
 <h2>${T.ownIssues} (${own.length})</h2>
 ${ref}

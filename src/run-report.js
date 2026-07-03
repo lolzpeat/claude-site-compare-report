@@ -67,7 +67,8 @@ for (const [name, group] of groups) {
   fs.writeFileSync(`${dir}/criteria.html`, renderCriteria());
   fs.writeFileSync(`${dir}/systemic.html`, renderSystemic(systemic, comparableCount));
   for (const { pair, result, own: ownIssues, systemicHits } of rows) {
-    fs.writeFileSync(`${dir}/${pair.id}.html`, renderDetail(pair, result, ownIssues, systemicHits));
+    // detail pages live in report/<slug>/, so screenshots (output/shots) are two levels up
+    fs.writeFileSync(`${dir}/${pair.id}.html`, renderDetail(pair, result, ownIssues, systemicHits, '../../shots'));
   }
   fs.writeFileSync(`${dir}/systemic.json`, JSON.stringify(systemic, null, 2));
 
