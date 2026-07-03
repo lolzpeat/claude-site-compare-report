@@ -16,6 +16,12 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 - prod-aem throws transient net::ERR_HTTP2_PROTOCOL_ERROR — just re-run run-capture (resume retries only failures)
 - Capture runs both sides concurrently in separate contexts (www/prod-aem = independent WAF limits); original-side link status checks are skipped (only migrated statuses are used). Settle waits are bounded (NETWORKIDLE_MS) — bank pages never reach true idle.
 
+## Snapshot invariants (src/capture/snapshot.js)
+
+- extractSnapshot runs via page.evaluate — MUST stay self-contained (no imports/closures). Its thresholds are INLINE literals, not config.js: MIN_MODULE_HEIGHT 40 (capture)/80 (compare in modules.js), COARSE_MODULE_MIN_HEIGHT 1000, ICON_MAX_PX 48.
+- snapshot.textBlocks are {text, region} objects (NOT strings) — use `.text`. region ∈ header|nav|footer|main (main = fallback). Content comparators (text/image/module) scope to region==='main'; link comparators stay page-wide.
+- Modules: chrome-aware descent excludes header/nav/footer; a coarse blob (≥1000px, ≥2 h2) is split into one module per h2 (h3 are sub-points). Original pages are flat (no <main>); missing-module still has residual false positives from flat-vs-segmented asymmetry — see docs/superpowers/specs/2026-07-02-pilot-findings.md.
+
 ## Contracts (exact strings — used across modules, tests, and report)
 
 - Issue categories: broken-link | link-target | image-ratio | text-language | missing-module | layout | capture-failure
@@ -29,6 +35,12 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 
 - aggregateIssues (src/report/systemic.js) splits each page's issues into site-wide (≥ SYSTEMIC_THRESHOLD of comparable Passed/Failed pages, min SYSTEMIC_MIN_PAGES) vs per-page "own". Renders output/report/systemic.html + output/issues/systemic.json; index shows Own/Site-wide split.
 - Dedup key = issueKey(issue) = category|original|migrated (or category|normalizeText(description) when no values). GOTCHA: never embed per-page counts/URLs in original/migrated — it breaks cross-page dedup. Use a stable keyHint for summary/cap issues instead.
+
+## Report rendering (src/report/)
+
+- UI is Thai. labels.js maps English contract values (severity/status/category/region) → Thai DISPLAY only; keep contract values + CSS class names English. html.js exports esc + CSS (reused by criteria.js).
+- index.html is a client-side dashboard (search/filter/sort/pagination, baked-in vanilla JS). criteria.html documents criteria/thresholds from LIVE config imports. run-report is pure render — re-run it (no re-capture) after compare/report code changes.
+- Browser-test the report via `python3 -m http.server` in output/report then drive localhost — file:// is blocked by the Chrome extension AND the Playwright MCP.
 
 ## AI visual review
 
