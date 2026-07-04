@@ -70,7 +70,8 @@ re-compare or re-capture.
 - Non-broken-link entries (tens of rows) keep the current main table.
 - Broken-link entries group by HTTP status parsed from the migrated value
   (`→ HTTP <n>` / `→ unreachable`); each status renders as a collapsed
-  `<details>`: summary `ลิงก์เสีย (HTTP 404) — N ลิงก์` + severity chip;
+  `<details>`: summary `ลิงก์เสีย (HTTP 404)` + count chip (severity is
+  visible per-row inside the group, so no severity chip in the summary);
   inside, the full per-link table (reach + example columns intact). No data
   dropped — only collapsed. Default collapsed.
 - Detail pages and systemic.html keep their existing structure (already
