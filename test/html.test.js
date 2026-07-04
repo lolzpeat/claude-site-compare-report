@@ -266,3 +266,21 @@ test('displayValue leaves unknown-host URLs and plain text unchanged (escaped)',
   assert.equal(displayValue('<b>x</b>'), '&lt;b&gt;x&lt;/b&gt;');
   assert.equal(displayValue(null), '—');
 });
+
+test('displayValue does not swallow trailing punctuation into the URL', () => {
+  const html = displayValue('(https://prod-aem.bangkokbank.com/th/foo).');
+  assert.match(html, /href="https:\/\/prod-aem\.bangkokbank\.com\/th\/foo"/);
+  assert.match(html, /\)\.$/);
+});
+
+test('displayValue keeps query strings in href and text', () => {
+  const html = displayValue('https://www.bangkokbank.com/th-TH/News?id=abc');
+  assert.match(html, /href="https:\/\/www\.bangkokbank\.com\/th-TH\/News\?id=abc"/);
+  assert.match(html, /News\?id=abc/);
+});
+
+test('displayValue shortens the URL inside requested:-prefixed values', () => {
+  const html = displayValue('requested: https://www.bangkokbank.com/th-TH/Personal');
+  assert.match(html, /requested: <a /);
+  assert.match(html, />\/th-TH\/Personal</);
+});

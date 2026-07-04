@@ -27,8 +27,11 @@ export function displayValue(value) {
   let out = '';
   let last = 0;
   for (const m of s.matchAll(URLISH_RE)) {
-    out += esc(s.slice(last, m.index)) + urlAnchor(m[0]);
-    last = m.index + m[0].length;
+    const raw = m[0];
+    const trailing = (raw.match(/[)\].,!?;:'"”’«»]+$/) ?? [''])[0];
+    const core = trailing ? raw.slice(0, -trailing.length) : raw;
+    out += esc(s.slice(last, m.index)) + urlAnchor(core) + esc(trailing);
+    last = m.index + raw.length;
   }
   return out + esc(s.slice(last));
 }
