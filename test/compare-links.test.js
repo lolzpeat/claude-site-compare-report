@@ -36,9 +36,9 @@ test('flags links present on original but missing on migrated, by text', () => {
 });
 
 test('a broken migrated link carries the link’s region', () => {
-  const mig = env([{ href: 'https://y/dead', text: 'Dead', region: 'footer' }], { 'https://y/dead': 404 });
+  const mig = env([{ href: 'https://y/dead', text: 'Dead', region: 'main' }], { 'https://y/dead': 404 });
   const issues = compareLinks(env([]), mig);
-  assert.equal(issues[0].region, 'footer');
+  assert.equal(issues[0].region, 'main');
 });
 
 test('no issues when links match and are healthy', () => {
@@ -83,4 +83,26 @@ test('migLinkStatusIssues treats a status URL with no matching link as page-wide
   };
   assert.equal(migLinkStatusIssues(migEnv, new Set(['main', 'page-wide'])).length, 1);
   assert.equal(migLinkStatusIssues(migEnv, new Set(['footer'])).length, 0);
+});
+
+test('compareLinks ignores original chrome-region links (chrome comparator owns them)', () => {
+  const orig = {
+    snapshot: { links: [{ href: 'https://o/a', text: 'เมนูหลักหายไป', region: 'nav' }], images: [], textBlocks: [], modules: [] },
+  };
+  const mig = { linkStatuses: {}, snapshot: { links: [], images: [], textBlocks: [], modules: [] } };
+  assert.deepEqual(compareLinks(orig, mig), []);
+});
+
+test('compareLinks only reports 404s for content-region links', () => {
+  const orig = { snapshot: { links: [], images: [], textBlocks: [], modules: [] } };
+  const mig = {
+    linkStatuses: { 'https://m/f': 404, 'https://m/m': 404 },
+    snapshot: { links: [
+      { href: 'https://m/f', text: 'ก', region: 'footer' },
+      { href: 'https://m/m', text: 'ข', region: 'main' },
+    ], images: [], textBlocks: [], modules: [] },
+  };
+  const issues = compareLinks(orig, mig);
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].region, 'main');
 });

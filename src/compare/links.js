@@ -1,6 +1,12 @@
 import { normalizeText } from '../lib/text-utils.js';
+import { CHROME_REGIONS } from './zones.js';
 
 const MAX_MISSING_REPORTED = 20;
+
+// Regions the generic (per-page) link comparators own; chrome regions belong to
+// src/compare/chrome.js so the same defect can't both fail the page and appear
+// site-wide.
+export const CONTENT_REGIONS = new Set(['main', 'page-wide']);
 
 // HTTP-status half of the link comparison: report migrated links that 404 / fail to
 // fetch. Shared with the news-detail comparator, which wants this signal WITHOUT the
@@ -31,7 +37,7 @@ export function migLinkStatusIssues(migEnv, regions = null) {
 }
 
 export function compareLinks(origEnv, migEnv) {
-  const issues = [...migLinkStatusIssues(migEnv)];
+  const issues = [...migLinkStatusIssues(migEnv, CONTENT_REGIONS)];
 
   const migTexts = new Set(
     migEnv.snapshot.links.map((l) => normalizeText(l.text).toLowerCase()).filter(Boolean),
@@ -39,6 +45,7 @@ export function compareLinks(origEnv, migEnv) {
   const seen = new Set();
   const missing = [];
   for (const l of origEnv.snapshot.links) {
+    if (CHROME_REGIONS.has(l.region)) continue;
     const t = normalizeText(l.text);
     const key = t.toLowerCase();
     if (t && !migTexts.has(key) && !seen.has(key)) {

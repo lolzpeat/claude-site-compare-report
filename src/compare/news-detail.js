@@ -1,5 +1,5 @@
 import { normalizeText, thaiRatio } from '../lib/text-utils.js';
-import { migLinkStatusIssues } from './links.js';
+import { migLinkStatusIssues, CONTENT_REGIONS } from './links.js';
 
 // A News-Detail article page (e.g. .../News-and-Media/News-Detail?id=GUID migrated to
 // .../news-and-media/<year>/<guid>). These get a dedicated element-level comparison:
@@ -106,7 +106,7 @@ export function compareNewsDetail(origEnv, migEnv) {
       location: 'news:content',
       original: 'article present', migrated: '(no article content)', region: 'main',
     });
-    return [...issues, ...migLinkStatusIssues(migEnv)];
+    return [...issues, ...migLinkStatusIssues(migEnv, CONTENT_REGIONS)];
   }
 
   // Headline — present + matches original.
@@ -205,5 +205,5 @@ export function compareNewsDetail(origEnv, migEnv) {
     });
   }
 
-  return [...issues, ...migLinkStatusIssues(migEnv)];
+  return [...issues, ...migLinkStatusIssues(migEnv, CONTENT_REGIONS)];
 }

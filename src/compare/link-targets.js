@@ -1,4 +1,5 @@
 import { normalizeText } from '../lib/text-utils.js';
+import { CHROME_REGIONS } from './zones.js';
 
 const MAX_REPORTED = 20;
 const ORIG_HOST = 'www.bangkokbank.com';
@@ -35,6 +36,7 @@ export function compareLinkTargets(origEnv, migEnv) {
   const seen = new Set();
   const missing = [];
   for (const l of origEnv.snapshot.links) {
+    if (CHROME_REGIONS.has(l.region)) continue;
     const key = expectedKey(l.href);
     if (!key || seen.has(key)) continue;
     seen.add(key);

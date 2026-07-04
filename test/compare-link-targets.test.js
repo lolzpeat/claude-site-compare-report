@@ -24,10 +24,10 @@ test('flags an original link whose transformed destination is not linked on migr
 });
 
 test('a link-target issue carries the original link’s region', () => {
-  const orig = env([{ href: `${O}/th-TH/Investor-Relations`, text: 'นักลงทุนสัมพันธ์', region: 'nav' }]);
+  const orig = env([{ href: `${O}/th-TH/Investor-Relations`, text: 'นักลงทุนสัมพันธ์', region: 'main' }]);
   const mig = env([{ href: `${M}/en/mutual-fund`, text: 'IR' }]);
   const issues = compareLinkTargets(orig, mig);
-  assert.equal(issues[0].region, 'nav');
+  assert.equal(issues[0].region, 'main');
 });
 
 test('no issue when migrated links to the expected transformed destination', () => {
@@ -79,4 +79,12 @@ test('expectedKey maps th-TH original URL to migrated host+path key', () => {
 
 test('migKey normalizes a migrated URL to host+path', () => {
   assert.equal(migKey('https://prod-aem.bangkokbank.com/th/Personal/'), 'prod-aem.bangkokbank.com/th/personal');
+});
+
+test('compareLinkTargets ignores original chrome-region links', () => {
+  const orig = {
+    snapshot: { links: [{ href: 'https://www.bangkokbank.com/th-TH/Nav-Only', text: 'เมนู', region: 'footer' }], images: [], textBlocks: [], modules: [] },
+  };
+  const mig = { snapshot: { links: [], images: [], textBlocks: [], modules: [] } };
+  assert.deepEqual(compareLinkTargets(orig, mig), []);
 });
