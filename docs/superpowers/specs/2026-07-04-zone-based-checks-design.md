@@ -1,7 +1,7 @@
 # Zone-based checks & report — design
 
 **Date:** 2026-07-04
-**Status:** Draft (awaiting review)
+**Status:** Implemented (2026-07-04)
 **Context:** The generic comparators only look at region `main` for content and
 page-wide for links, so shared chrome (header/nav/footer) is either invisible or
 a false-positive source, and the report mixes per-page defects with site-wide

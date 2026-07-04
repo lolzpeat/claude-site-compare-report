@@ -14,7 +14,7 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 
 ## Report structure (per-sheet)
 
-- run-report groups pages by their `sheet` column. Output: `output/report/index.html` = landing (one card per sheet) → `output/report/<slug>/index.html` = that sheet's dashboard, with its own systemic.html, criteria.html, `<id>.html` detail pages, systemic.json. Relative links (index/systemic/criteria/<id>.html) resolve within each subdir — renderIndex/renderDetail/renderSystemic are dir-agnostic; only renderLanding (html.js) is new. Systemic is aggregated per-sheet.
+- run-report groups pages by their `sheet` column. Output: `output/report/index.html` = landing (one card per sheet) → `output/report/<slug>/index.html` = that sheet's dashboard, with its own systemic.html, criteria.html, chrome.html, `<id>.html` detail pages, systemic.json, chrome.json. Relative links (index/systemic/criteria/<id>.html) resolve within each subdir — renderIndex/renderDetail/renderSystemic are dir-agnostic; only renderLanding (html.js) is new. Systemic is aggregated per-sheet.
 
 ## WAF gotchas (cost us a failed batch run)
 
@@ -33,13 +33,16 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 
 ## Contracts (exact strings — used across modules, tests, and report)
 
-- Issue categories: broken-link | link-target | image-ratio | text-language | missing-module | layout | capture-failure | news-element
+- Issue categories: broken-link | link-target | image-ratio | text-language | missing-module | layout | capture-failure | news-element | hero | menu-label
   (link-target = an original link's destination, transformed to its expected migrated URL via /th-TH/→/th/ + lowercase, isn't linked on migrated — catches menu items repointed to the wrong page)
   (news-element = element-level defects on News-Detail articles: headline/date/content/image/breadcrumb/share. src/compare/news-detail.js; comparePair routes News-Detail pages there via isNewsDetail and SKIPS the generic link/text/module comparators — they only false-positive on that template. location = news:headline|news:date|news:content|news:image|news:breadcrumb|news:share)
   (migrated AEM chrome — nav/breadcrumb — renders in English not Thai, a real migration defect that also inflates text-language FPs on the generic comparators; another reason News-Detail routes to its own comparator. Corpus-wide defects confirmed on 200 articles: every migrated news page has date="Invalid Date" + missing share + English breadcrumb)
+  (hero = first main-region module image/heading mismatch, conservative, per-page)
+  (menu-label = chrome link matched by URL but labelled differently; chrome-zone issues live in chromeIssues, never affect page status)
 - Severities: High | Medium | Low
 - Statuses: Passed | Failed | "Capture Failed" | "Not Migrated" (migrated 404) | "Retired on Original" (original 404); never report a failed capture as Passed. Capture Failed / Not Migrated / Retired on Original are sticky in mergeIssues. 404 detection = looksNotFound (NOT_FOUND_PATTERNS) gate in comparePair.
-- Issue shape: {category, severity, description, location, original?, migrated?}; comparators set original/migrated to the concrete before/after values, report shows them as columns (— when absent)
+- Issue shape: {category, severity, description, location, original?, migrated?}; comparators set original/migrated to the concrete before/after values, report shows them as columns (— when absent); zone?: header-nav|footer|hero|main (absent = main)
+- comparePair returns { status, issues, chromeIssues, chromeStats }; status from issues only. Generic link comparators are scoped to CONTENT_REGIONS (main/page-wide); chrome regions (header/nav/footer) belong to src/compare/chrome.js.
 - AI visual review: write output/issues/ai/<id>.json as {pairId, issues:[{category,severity,description,location}]}; original/migrated optional; run-report merges it
 
 ## Systemic aggregation (run-report)
