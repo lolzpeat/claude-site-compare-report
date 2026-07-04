@@ -96,7 +96,15 @@ surfaces systematically in chrome.html. Hero does not run on them.
   are implicitly `main`.
 - `run-report` aggregates `chromeIssues` across a sheet's pages by `issueKey`,
   tracking affected-page counts and 2–3 example page ids, writing
-  `output/issues/chrome.json` and `report/<slug>/chrome.html`.
+  `report/<slug>/chrome.json` (next to systemic.json) and
+  `report/<slug>/chrome.html`.
+- The generic link comparators (`compareLinks`, `compareLinkTargets`,
+  `migLinkStatusIssues`) are scoped to non-chrome regions (`main` /
+  `page-wide` / missing region); the chrome comparator owns `header`, `nav`,
+  and `footer` links. Otherwise the same footer 404 would appear in both
+  `issues` (failing the page) and `chromeIssues`, contradicting the status
+  rule — and this scoping also removes existing English-nav false positives
+  from the generic comparators.
 - New config in `src/config.js`: `ZONE_COVERAGE_MIN` (0.5); Thai-ratio
   thresholds reuse the existing values.
 
@@ -131,7 +139,9 @@ Mockups reviewed and approved in the brainstorm session:
 - Issue categories gain `hero` and `menu-label`.
 - Issue shape gains optional `zone` field (default `main`).
 - `comparePair` return shape: `{ status, issues, chromeIssues }`.
-- New output artifact: `output/issues/chrome.json`.
+- New output artifacts: `report/<slug>/chrome.json` + `report/<slug>/chrome.html`.
+- Generic link comparators become main-scoped (chrome regions belong to the
+  chrome comparator).
 - Dedup gotcha still applies: never embed per-page counts/URLs in
   `original`/`migrated` of chrome issues; affected-page counts live only in
   the aggregation layer.
