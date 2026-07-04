@@ -28,5 +28,5 @@ for (const pair of pairs) {
     `${DIRS.detIssues}/${pair.id}.json`,
     JSON.stringify({ pairId: pair.id, ...result }, null, 2),
   );
-  console.log(`${pair.id}: ${result.status} (${result.issues.length} issues)`);
+  console.log(`${pair.id}: ${result.status} (${result.issues.length} issues, ${result.chromeIssues.length} chrome)`);
 }

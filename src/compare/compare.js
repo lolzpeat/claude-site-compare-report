@@ -6,6 +6,10 @@ import { compareModules } from './modules.js';
 import { detectRedirects } from './redirect.js';
 import { looksNotFound } from './not-found.js';
 import { isNewsDetail, compareNewsDetail } from './news-detail.js';
+import { compareChrome } from './chrome.js';
+import { compareHero } from './hero.js';
+
+const NO_CHROME = { chromeIssues: [], chromeStats: [] };
 
 export function comparePair(origEnv, migEnv) {
   const captureIssues = [];
@@ -18,7 +22,7 @@ export function comparePair(origEnv, migEnv) {
       });
     }
   }
-  if (captureIssues.length > 0) return { status: 'Capture Failed', issues: captureIssues };
+  if (captureIssues.length > 0) return { status: 'Capture Failed', issues: captureIssues, ...NO_CHROME };
 
   const origNotFound = looksNotFound(origEnv.snapshot);
   const migNotFound = looksNotFound(migEnv.snapshot);
@@ -34,6 +38,7 @@ export function comparePair(origEnv, migEnv) {
         original: origNotFound ? '404' : 'page exists',
         migrated: '404',
       }],
+      ...NO_CHROME,
     };
   }
   if (origNotFound) {
@@ -45,6 +50,7 @@ export function comparePair(origEnv, migEnv) {
         location: 'page-wide',
         original: '404 (page retired)', migrated: 'page exists',
       }],
+      ...NO_CHROME,
     };
   }
 
@@ -52,12 +58,17 @@ export function comparePair(origEnv, migEnv) {
   // link/text/module comparators, which only produce false positives on this template
   // (the News-Detail?id=GUID → /<year>/<guid> URL transform can't be modelled, and the
   // flat original page mis-scopes chrome text into 'main').
+  const chrome = compareChrome(origEnv, migEnv);
+
   if (isNewsDetail(origEnv, migEnv)) {
     const issues = [
       ...detectRedirects(origEnv, migEnv),
       ...compareNewsDetail(origEnv, migEnv),
     ];
-    return { status: issues.length === 0 ? 'Passed' : 'Failed', issues };
+    return {
+      status: issues.length === 0 ? 'Passed' : 'Failed', issues,
+      chromeIssues: chrome.issues, chromeStats: chrome.stats,
+    };
   }
 
   const issues = [
@@ -67,6 +78,10 @@ export function comparePair(origEnv, migEnv) {
     ...compareImages(origEnv, migEnv),
     ...compareText(origEnv, migEnv),
     ...compareModules(origEnv, migEnv),
+    ...compareHero(origEnv, migEnv),
   ];
-  return { status: issues.length === 0 ? 'Passed' : 'Failed', issues };
+  return {
+    status: issues.length === 0 ? 'Passed' : 'Failed', issues,
+    chromeIssues: chrome.issues, chromeStats: chrome.stats,
+  };
 }
