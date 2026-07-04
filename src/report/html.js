@@ -1,4 +1,4 @@
-import { T, TH_HEAD, SEVERITY_LABEL, STATUS_LABEL, CATEGORY_LABEL, REGION_LABEL } from './labels.js';
+import { T, TH_HEAD, SEVERITY_LABEL, STATUS_LABEL, CATEGORY_LABEL, REGION_LABEL, ZONE_LABEL } from './labels.js';
 
 export const esc = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -9,6 +9,7 @@ const statusText = (s) => STATUS_LABEL[s] ?? s;
 const catText = (c) => CATEGORY_LABEL[c] ?? c;
 const regionText = (r) => REGION_LABEL[r] ?? r;
 const th = (label) => TH_HEAD[label] ?? label;
+const zoneText = (z) => ZONE_LABEL[z] ?? z;
 const tok = (status) => esc(status.split(' ')[0]); // stable single-word token for CSS
 
 export const CSS = `
@@ -45,6 +46,8 @@ export const CSS = `
   .stat.total{cursor:default;border-style:dashed;color:var(--muted)}
   .stat.b-Passed b{color:var(--pass)} .stat.b-Failed b{color:var(--fail)} .stat.b-Not b{color:var(--notmig)}
   .stat.b-Retired b{color:var(--retired)} .stat.b-Capture b{color:var(--capture)}
+  .stat.chrome-stat{border-color:var(--accent);background:var(--accent-weak);color:var(--accent);text-decoration:none}
+  .stat.chrome-stat:hover{text-decoration:underline}
 
   /* toolbar */
   .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 12px}
@@ -108,6 +111,11 @@ export const CSS = `
   .cap{font-weight:600;margin:4px 0;color:var(--muted)}
   .Passed{color:var(--pass);font-weight:600} .Failed{color:var(--fail);font-weight:600}
   .Capture{color:var(--capture);font-weight:600} .Not{color:var(--notmig);font-weight:600} .Retired{color:var(--retired);font-weight:600}
+
+  /* chrome block on detail pages — informational, not counted in page status */
+  details.chrome-block{border-left:3px dashed var(--muted);background:#f7f8fb}
+  details.chrome-block summary{color:var(--muted)}
+  .zone-tag{background:#e7ebfb;color:#26408c}
 
   @media (max-width:640px){
     body{padding:14px}
@@ -254,7 +262,7 @@ const groupTables = (issues) => groupIssues(issues).map((g) => `
 // Statuses in display order (only those present are shown).
 const STATUS_ORDER = ['Passed', 'Failed', 'Not Migrated', 'Retired on Original', 'Capture Failed'];
 
-export function renderIndex(rows, systemicCount) {
+export function renderIndex(rows, systemicCount, chromeCount = 0) {
   const statusCounts = {};
   for (const r of rows) statusCounts[r.result.status] = (statusCounts[r.result.status] ?? 0) + 1;
   const presentStatuses = STATUS_ORDER.filter((s) => statusCounts[s]);
@@ -263,9 +271,12 @@ export function renderIndex(rows, systemicCount) {
   for (const r of rows) for (const i of r.own) catsPresent.add(i.category);
   const catOptions = [...catsPresent].sort();
 
+  const chromeChip = chromeCount > 0
+    ? `<a class="stat chrome-stat" href="chrome.html">${T.chromeTitle} <b>${chromeCount}</b></a>`
+    : '';
   const statChips = presentStatuses
     .map((s) => `<button type="button" class="stat b-${tok(s)}" data-status="${esc(s)}">${esc(statusText(s))} <b>${statusCounts[s]}</b></button>`)
-    .join('') + `<span class="stat total">รวม <b>${rows.length}</b> หน้า</span>`;
+    .join('') + `<span class="stat total">รวม <b>${rows.length}</b> หน้า</span>` + chromeChip;
 
   const statusOpts = presentStatuses
     .map((s) => `<option value="${esc(s)}">${esc(statusText(s))} (${statusCounts[s]})</option>`).join('');
@@ -338,11 +349,13 @@ export function renderLanding(sheets) {
       .join(' ');
     const sysline = s.systemicCount > 0
       ? `<p class="muted">${s.systemicCount} ${T.siteWideTitle}</p>` : '';
+    const chromeline = s.chromeCount > 0
+      ? `<p class="muted">${s.chromeCount} ปัญหาโซนส่วนกลาง</p>` : '';
     return `<a class="sheet-card" href="${esc(s.slug)}/index.html">
       <h2>${esc(s.name)}</h2>
       <p class="big"><b>${s.total}</b> <span class="muted">หน้า</span></p>
       <div class="chips">${chips || '<span class="muted">—</span>'}</div>
-      ${sysline}
+      ${sysline}${chromeline}
     </a>`;
   }).join('');
   const extraCss = '.sheet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}'
@@ -364,6 +377,28 @@ export function renderDetail(pair, result, own, systemicHits, shotsBase = '../sh
   const ref = systemicHits > 0
     ? `<p>+${systemicHits} ${T.refA} <a href="systemic.html">${T.seeSystemic}</a></p>`
     : '';
+  const heroIssues = own.filter((i) => i.zone === 'hero');
+  const mainIssues = own.filter((i) => i.zone !== 'hero');
+  const heroSection = heroIssues.length > 0
+    ? `<h2>${T.heroSection} (${heroIssues.length})</h2>\n${groupTables(heroIssues)}`
+    : '';
+
+  const chromeIssues = result.chromeIssues ?? [];
+  const chromeRows = chromeIssues.map((i) => `
+    <tr class="sev-${esc(i.severity)}">
+      <td>${esc(catText(i.category))}</td><td>${esc(sevText(i.severity))}</td>
+      <td><span class="chip zone-tag">${esc(zoneText(i.zone))}</span></td>
+      <td>${esc(i.description)}</td>
+      <td class="val val-orig">${esc(i.original ?? '—')}</td>
+      <td class="val val-mig">${esc(i.migrated ?? '—')}</td>
+    </tr>`).join('');
+  const chromeBlock = chromeIssues.length > 0 ? `
+<details class="cat chrome-block">
+  <summary>${T.chromeOnPageA} <b>${chromeIssues.length}</b> ${T.chromeOnPageB}</summary>
+  <table><tr><th>${th('Category')}</th><th>${th('Severity')}</th><th>${th('Zone')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th></tr>${chromeRows}</table>
+  <p class="muted" style="padding:0 14px 12px">${T.chromeSeeAll} <a href="chrome.html">${T.seeChrome}</a></p>
+</details>` : '';
+
   return `<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(pair.id)}</title>
 <style>${CSS}</style></head><body>
 <p><a href="index.html">${T.back}</a></p>
@@ -374,9 +409,11 @@ ${T.migrated}: <a href="${esc(pair.migratedUrl)}">${esc(pair.migratedUrl)}</a></
   <div><p class="cap">${T.original}</p><img src="${esc(shotsBase)}/${esc(pair.id)}-orig.png" alt="original"></div>
   <div><p class="cap">${T.migrated}</p><img src="${esc(shotsBase)}/${esc(pair.id)}-mig.png" alt="migrated"></div>
 </div>
-<h2>${T.ownIssues} (${own.length})</h2>
+${heroSection}
+<h2>${T.ownIssues} (${mainIssues.length})</h2>
 ${ref}
-${groupTables(own) || `<p>${T.noOwnIssues}</p>`}
+${groupTables(mainIssues) || `<p>${T.noOwnIssues}</p>`}
+${chromeBlock}
 <script>${SYNC_SCROLL}</script>
 </body></html>`;
 }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderIndex, renderDetail, renderSystemic } from '../src/report/html.js';
+import { renderIndex, renderDetail, renderSystemic, renderLanding } from '../src/report/html.js';
 
 const pair = { id: 'my-home', originalUrl: 'https://x/o', migratedUrl: 'https://y/m', category: 'Personal', subCategory: 'My Home' };
 const result = {
@@ -186,4 +186,48 @@ test('index has sortable ledger headers and clickable status stat chips', () => 
   assert.match(html, /<th data-key="seq"[^>]*aria-sort="ascending"/);
   assert.match(html, /<th data-key="own"/);
   assert.match(html, /<button type="button" class="stat b-Failed" data-status="Failed">/);
+});
+
+test('renderDetail groups hero issues under their own section', () => {
+  const pair = { id: 'p1', originalUrl: 'https://o', migratedUrl: 'https://m', category: 'c', subCategory: 's' };
+  const own = [
+    { category: 'hero', severity: 'Medium', zone: 'hero', description: 'Hero banner image differs from original', location: 'hero', original: 'a.jpg', migrated: 'b.jpg' },
+    { category: 'missing-module', severity: 'High', description: 'Module missing', location: 'm' },
+  ];
+  const html = renderDetail(pair, { status: 'Failed', issues: own, chromeIssues: [] }, own, 0);
+  assert.match(html, /แบนเนอร์หลัก \(Hero Banner\) \(1\)/);
+  assert.match(html, /ปัญหาเฉพาะหน้า \(1\)/); // main section excludes the hero issue
+});
+
+test('renderDetail appends a collapsed chrome block when the page has chrome issues', () => {
+  const pair = { id: 'p1', originalUrl: 'https://o', migratedUrl: 'https://m', category: 'c', subCategory: 's' };
+  const chromeIssues = [
+    { category: 'text-language', severity: 'High', zone: 'header-nav', description: 'English label', location: 'x', original: 'ก', migrated: 'A' },
+  ];
+  const html = renderDetail(pair, { status: 'Passed', issues: [], chromeIssues }, [], 0);
+  assert.match(html, /โซนส่วนกลาง \(Chrome\) — พบ <b>1<\/b> ประเด็นบนหน้านี้ \(ไม่นับรวมในสถานะ\)/);
+  assert.match(html, /<details class="cat chrome-block">/); // collapsed: no ` open`
+  assert.match(html, /ส่วนหัว\/เมนูหลัก/); // zone chip label
+  assert.match(html, /chrome\.html/);
+});
+
+test('renderDetail omits the chrome block when there are no chrome issues', () => {
+  const pair = { id: 'p1', originalUrl: 'https://o', migratedUrl: 'https://m', category: 'c', subCategory: 's' };
+  const html = renderDetail(pair, { status: 'Passed', issues: [], chromeIssues: [] }, [], 0);
+  // the shared CSS always defines the .chrome-block selector (so it's stylable when present);
+  // what must be absent is the actual <details> element.
+  assert.doesNotMatch(html, /<details class="cat chrome-block">/);
+});
+
+test('renderIndex shows a chrome stat chip linking to chrome.html when chromeCount > 0', () => {
+  const rows = [];
+  const html = renderIndex(rows, 0, 3);
+  assert.match(html, /class="stat chrome-stat" href="chrome\.html"/);
+  assert.match(html, /<b>3<\/b>/);
+  assert.doesNotMatch(renderIndex(rows, 0, 0), /chrome\.html/);
+});
+
+test('renderLanding shows per-sheet chrome count when present', () => {
+  const html = renderLanding([{ name: 'S', slug: 's', total: 1, statusCounts: { Passed: 1 }, systemicCount: 0, chromeCount: 4 }]);
+  assert.match(html, /4 ปัญหาโซนส่วนกลาง/);
 });
