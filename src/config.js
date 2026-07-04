@@ -12,6 +12,7 @@ export const NOT_FOUND_PATTERNS = [
 ];
 export const SYSTEMIC_THRESHOLD = 0.5;
 export const SYSTEMIC_MIN_PAGES = 3;
+export const ZONE_COVERAGE_MIN = 0.5; // chrome zone: matched/mappable below this → one High summary issue
 export const INTER_PAGE_DELAY_MS = 20_000;
 export const WAF_COOLDOWN_MS = 600_000; // 10 min pause after a WAF block (×streak, capped ×3)
 export const MAX_LINK_CHECKS = 50;
