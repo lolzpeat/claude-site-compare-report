@@ -102,6 +102,32 @@ test('renderChrome collapses broken-link entries into per-status groups', () => 
   assert.match(html, /เมนู\/ข้อความส่วนกลางแสดงเป็นภาษาอังกฤษ/);
 });
 
+test('broken-only zone renders groups without the empty-zone message; empty zone still shows it', () => {
+  const chromeIssues = [
+    brokenIssue('https://prod-aem.bangkokbank.com/th/a', 404, 'footer'),
+    brokenIssue('https://prod-aem.bangkokbank.com/th/b', 403, 'footer'),
+  ];
+  const html = renderChrome(aggregateChrome([result('p1', chromeIssues)]));
+  const footerStart = html.indexOf('<h2>ส่วนท้าย');
+  const headerSection = html.slice(0, footerStart);
+  const footerSection = html.slice(footerStart);
+  // footer has only broken-link entries: groups render, no contradicting empty message
+  assert.doesNotMatch(footerSection, /ไม่พบปัญหาในโซนนี้/);
+  assert.match(footerSection, /ลิงก์เสีย \(HTTP/);
+  // header-nav has zero entries: the empty message still shows
+  assert.match(headerSection, /ไม่พบปัญหาในโซนนี้/);
+});
+
+test('broken-link entries with unparseable migrated value fall back to the อื่น ๆ group', () => {
+  const chromeIssues = [{
+    category: 'broken-link', severity: 'Medium', zone: 'header-nav',
+    description: 'Broken link: https://prod-aem.bangkokbank.com/th/x',
+    location: 'x', original: '—', migrated: 'https://prod-aem.bangkokbank.com/th/x',
+  }];
+  const html = renderChrome(aggregateChrome([result('p1', chromeIssues)]));
+  assert.match(html, /ลิงก์เสีย \(อื่น ๆ\)/);
+});
+
 test('renderChrome groups unreachable links separately', () => {
   const chromeIssues = [{
     category: 'broken-link', severity: 'Medium', zone: 'footer',

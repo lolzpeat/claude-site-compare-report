@@ -109,7 +109,9 @@ export function renderChrome(agg) {
     const rest = entries.filter((e) => e.issue.category !== 'broken-link');
     const table = rest.length
       ? `<table><tr><th>${th('Category')}</th><th>${th('Severity')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th><th>${th('Found on')}</th><th>${th('Examples')}</th></tr>${zoneRows(rest, agg.comparableCount)}</table>`
-      : `<p class="muted">ไม่พบปัญหาในโซนนี้</p>`;
+      : entries.length === 0
+        ? `<p class="muted">ไม่พบปัญหาในโซนนี้</p>`
+        : '';
     return `<h2>${esc(ZONE_LABEL[zone] ?? zone)}</h2>${statStrip(agg.statsByZone[zone] ?? { orig: 0, mig: 0, matched: 0, missing: 0 })}${table}${brokenGroups(broken, agg.comparableCount)}`;
   }).join('\n');
 
