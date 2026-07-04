@@ -29,3 +29,11 @@ test('is a Thai HTML document with the expected sections', () => {
   assert.match(html, /ระดับความรุนแรง/);
   assert.match(html, /การรวมปัญหาระดับทั้งเว็บ/);
 });
+
+test('criteria page documents chrome zones, menu-label, hero and ZONE_COVERAGE_MIN', () => {
+  const html = renderCriteria();
+  assert.match(html, /menu-label/);
+  assert.match(html, /hero/);
+  assert.match(html, /ZONE_COVERAGE_MIN/);
+  assert.match(html, /โซนส่วนกลาง/);
+});

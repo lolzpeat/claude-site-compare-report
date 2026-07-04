@@ -5,6 +5,7 @@ import { mergeIssues } from './report/merge.js';
 import { aggregateIssues, issueKey, countSystemicHits } from './report/systemic.js';
 import { renderIndex, renderDetail, renderSystemic, renderLanding } from './report/html.js';
 import { renderCriteria } from './report/criteria.js';
+import { aggregateChrome, renderChrome } from './report/chrome.js';
 import { renderSheetCsv } from './report/csv.js';
 
 const readJson = (file) => {
@@ -54,6 +55,7 @@ for (const [name, group] of groups) {
   fs.mkdirSync(dir, { recursive: true });
 
   const { systemic, own } = aggregateIssues(group.map((e) => e.result));
+  const chromeAgg = aggregateChrome(group.map((e) => e.result));
   const systemicKeys = new Set(systemic.map((s) => issueKey(s.issue)));
   const comparableCount = group.filter((e) => e.result.status === 'Passed' || e.result.status === 'Failed').length;
 
@@ -63,7 +65,9 @@ for (const [name, group] of groups) {
     systemicHits: countSystemicHits(e.result.issues, systemicKeys),
   }));
 
-  fs.writeFileSync(`${dir}/index.html`, renderIndex(rows, systemic.length));
+  fs.writeFileSync(`${dir}/index.html`, renderIndex(rows, systemic.length, chromeAgg.entries.length));
+  fs.writeFileSync(`${dir}/chrome.html`, renderChrome(chromeAgg));
+  fs.writeFileSync(`${dir}/chrome.json`, JSON.stringify(chromeAgg, null, 2));
   fs.writeFileSync(`${dir}/criteria.html`, renderCriteria());
   fs.writeFileSync(`${dir}/systemic.html`, renderSystemic(systemic, comparableCount));
   for (const { pair, result, own: ownIssues, systemicHits } of rows) {
@@ -74,10 +78,10 @@ for (const [name, group] of groups) {
 
   const statusCounts = {};
   for (const r of rows) statusCounts[r.result.status] = (statusCounts[r.result.status] ?? 0) + 1;
-  sheetSummaries.push({ name, slug, total: rows.length, statusCounts, systemicCount: systemic.length });
+  sheetSummaries.push({ name, slug, total: rows.length, statusCounts, systemicCount: systemic.length, chromeCount: chromeAgg.entries.length });
   allRows.push(...rows);
 
-  console.log(`[${name}] ${rows.length} pages, ${systemic.length} site-wide → ${dir}/index.html`);
+  console.log(`[${name}] ${rows.length} pages, ${systemic.length} site-wide, ${chromeAgg.entries.length} chrome → ${dir}/index.html`);
 }
 
 fs.writeFileSync(`${DIRS.report}/index.html`, renderLanding(sheetSummaries));
