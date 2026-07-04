@@ -100,6 +100,24 @@ test('main-region links are ignored entirely', () => {
   assert.equal(stats[0].orig + stats[1].orig, 0);
 });
 
+test('missing links beyond the per-zone cap emit an overflow summary', () => {
+  const links = Array.from({ length: 25 }, (_, i) => ({
+    href: `${ORIG}/th-TH/L${i}`, text: `L${i}`, region: 'footer',
+  }));
+  const { issues } = compareChrome(env(links), env([]));
+
+  const itemized = issues.filter((i) => i.category === 'link-target' && !i.keyHint);
+  assert.equal(itemized.length, 20);
+
+  const coverage = issues.filter((i) => i.keyHint === 'chrome-footer-coverage');
+  assert.equal(coverage.length, 1);
+
+  const overflow = issues.filter((i) => i.keyHint === 'chrome-footer-missing-overflow');
+  assert.equal(overflow.length, 1);
+  assert.equal(overflow[0].severity, 'High');
+  assert.equal(overflow[0].zone, 'footer');
+});
+
 test('stats reports per-zone orig/mig/matched/missing counts', () => {
   const { stats } = compareChrome(
     env([

@@ -70,6 +70,14 @@ export function compareChrome(origEnv, migEnv) {
       });
     }
 
+    if (missing.length > MAX_REPORTED_PER_ZONE) {
+      issues.push({
+        category: 'link-target', severity: 'High', zone,
+        description: `More original links missing in this zone than itemized (first ${MAX_REPORTED_PER_ZONE} listed)`,
+        location: zone, keyHint: `chrome-${zone}-missing-overflow`,
+      });
+    }
+
     const mappable = matched + missing.length;
     if (mappable >= MIN_MAPPABLE_FOR_COVERAGE && matched / mappable < ZONE_COVERAGE_MIN) {
       issues.push({
