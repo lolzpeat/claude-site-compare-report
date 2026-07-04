@@ -284,3 +284,26 @@ test('displayValue shortens the URL inside requested:-prefixed values', () => {
   assert.match(html, /requested: <a /);
   assert.match(html, />\/th-TH\/Personal</);
 });
+
+test('renderDetail renders Thai descriptions and shortened URL values', () => {
+  const pair = { id: 'p1', originalUrl: 'https://o', migratedUrl: 'https://m', category: 'c', subCategory: 's' };
+  const own = [{
+    category: 'broken-link', severity: 'High',
+    description: 'Link returns HTTP 404: https://prod-aem.bangkokbank.com/th/privacy',
+    location: 'x', original: '—', migrated: 'https://prod-aem.bangkokbank.com/th/privacy → HTTP 404',
+  }];
+  const html = renderDetail(pair, { status: 'Failed', issues: own, chromeIssues: [] }, own, 0);
+  assert.match(html, /ลิงก์เสีย \(HTTP 404\)/);
+  assert.doesNotMatch(html, /Link returns HTTP 404/);
+  assert.match(html, />\/th\/privacy</); // shortened value anchor
+});
+
+test('renderSystemic renders Thai descriptions', () => {
+  const systemic = [{
+    issue: { category: 'text-language', severity: 'High', description: 'Thai/English balance differs: original 85% Thai vs migrated 40% Thai', original: '85% Thai', migrated: '40% Thai' },
+    pageIds: ['p1'], count: 1,
+  }];
+  const html = renderSystemic(systemic, 1);
+  assert.match(html, /สัดส่วนภาษาไทย\/อังกฤษต่างไปจากเดิม/);
+  assert.doesNotMatch(html, /balance differs/);
+});

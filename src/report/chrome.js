@@ -1,5 +1,6 @@
 import { issueKey } from './systemic.js';
-import { esc, CSS } from './html.js';
+import { esc, CSS, displayValue } from './html.js';
+import { describeIssue } from './describe.js';
 import { T, TH_HEAD, SEVERITY_LABEL, CATEGORY_LABEL, ZONE_LABEL } from './labels.js';
 import { CHROME_ZONES } from '../compare/zones.js';
 
@@ -71,9 +72,9 @@ const zoneRows = (entries, comparableCount) => entries.map(({ issue, count, page
     <tr class="sev-${esc(issue.severity)}">
       <td>${esc(CATEGORY_LABEL[issue.category] ?? issue.category)}</td>
       <td>${esc(SEVERITY_LABEL[issue.severity] ?? issue.severity)}</td>
-      <td>${esc(issue.description)}</td>
-      <td class="val val-orig">${esc(issue.original ?? '—')}</td>
-      <td class="val val-mig">${esc(issue.migrated ?? '—')}</td>
+      <td>${esc(describeIssue(issue))}</td>
+      <td class="val val-orig">${displayValue(issue.original ?? '—')}</td>
+      <td class="val val-mig">${displayValue(issue.migrated ?? '—')}</td>
       <td><span class="chip reach">${count} / ${comparableCount}</span></td>
       <td>${exampleLinks(pageIds)}</td>
     </tr>`).join('');

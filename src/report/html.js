@@ -1,4 +1,5 @@
 import { T, TH_HEAD, SEVERITY_LABEL, STATUS_LABEL, CATEGORY_LABEL, REGION_LABEL, ZONE_LABEL } from './labels.js';
+import { describeIssue } from './describe.js';
 
 export const esc = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -279,9 +280,9 @@ const thumb = (src) => (src && /^https?:/.test(src))
 
 const issueRows = (items) => items.map((i) => `
     <tr class="sev-${esc(i.severity)}">
-      <td>${esc(sevText(i.severity))}</td><td>${esc(i.description)}</td>
-      <td class="val val-orig">${esc(i.original ?? '—')}${thumb(i.originalSrc)}</td>
-      <td class="val val-mig">${esc(i.migrated ?? '—')}${thumb(i.migratedSrc)}</td>
+      <td>${esc(sevText(i.severity))}</td><td>${esc(describeIssue(i))}</td>
+      <td class="val val-orig">${displayValue(i.original ?? '—')}${thumb(i.originalSrc)}</td>
+      <td class="val val-mig">${displayValue(i.migrated ?? '—')}${thumb(i.migratedSrc)}</td>
       <td>${esc(i.location)}${i.region ? ` <span class="chip region-tag">${esc(regionText(i.region))}</span>` : ''}</td>
     </tr>`).join('');
 
@@ -420,9 +421,9 @@ export function renderDetail(pair, result, own, systemicHits, shotsBase = '../sh
     <tr class="sev-${esc(i.severity)}">
       <td>${esc(catText(i.category))}</td><td>${esc(sevText(i.severity))}</td>
       <td><span class="chip zone-tag">${esc(zoneText(i.zone))}</span></td>
-      <td>${esc(i.description)}</td>
-      <td class="val val-orig">${esc(i.original ?? '—')}</td>
-      <td class="val val-mig">${esc(i.migrated ?? '—')}</td>
+      <td>${esc(describeIssue(i))}</td>
+      <td class="val val-orig">${displayValue(i.original ?? '—')}</td>
+      <td class="val val-mig">${displayValue(i.migrated ?? '—')}</td>
     </tr>`).join('');
   const chromeBlock = chromeIssues.length > 0 ? `
 <details class="cat chrome-block">
@@ -466,9 +467,9 @@ export function renderSystemic(systemic, comparableCount) {
   <summary>${esc(catText(g.category))} <span class="chip chip-count">${g.entries.length}</span></summary>
   <table><tr><th>${th('Severity')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th><th>${th('Reach')}</th><th>${th('Affected pages')}</th></tr>${g.entries.map((s) => `
     <tr class="sev-${esc(s.issue.severity)}">
-      <td>${esc(sevText(s.issue.severity))}</td><td>${esc(s.issue.description)}</td>
-      <td class="val val-orig">${esc(s.issue.original ?? '—')}</td>
-      <td class="val val-mig">${esc(s.issue.migrated ?? '—')}</td>
+      <td>${esc(sevText(s.issue.severity))}</td><td>${esc(describeIssue(s.issue))}</td>
+      <td class="val val-orig">${displayValue(s.issue.original ?? '—')}</td>
+      <td class="val val-mig">${displayValue(s.issue.migrated ?? '—')}</td>
       <td><span class="chip reach">${s.count} / ${comparableCount}</span></td>
       <td>${s.pageIds.map((id) => `<a href="${esc(id)}.html">${esc(id)}</a>`).join(', ')}</td>
     </tr>`).join('')}</table>

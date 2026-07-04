@@ -74,6 +74,6 @@ test('identical issues in different zones stay separate entries and render under
   const footerStart = html.indexOf('<h2>ส่วนท้าย');
   const headerSection = html.slice(headerStart, footerStart);
   const footerSection = html.slice(footerStart);
-  assert.match(headerSection, /Chrome label rendered in English/);
-  assert.match(footerSection, /Chrome label rendered in English/);
+  assert.match(headerSection, /เมนู\/ข้อความส่วนกลางแสดงเป็นภาษาอังกฤษ/);
+  assert.match(footerSection, /เมนู\/ข้อความส่วนกลางแสดงเป็นภาษาอังกฤษ/);
 });
