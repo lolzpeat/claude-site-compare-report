@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compareLinks } from '../src/compare/links.js';
+import { compareLinks, migLinkStatusIssues } from '../src/compare/links.js';
 
 const env = (links, statuses = {}) => ({
   requestedUrl: 'https://x/', blocked: false, error: null,
@@ -59,4 +59,28 @@ test('caps missing-link reports at 20 and adds a High summary beyond the cap', (
   assert.equal(summary[0].severity, 'High');
   assert.equal(issues.length, 21);
   assert.equal(summary[0].keyHint, 'orig-links-missing-summary');
+});
+
+test('migLinkStatusIssues with a region set only reports links in those regions', () => {
+  const migEnv = {
+    linkStatuses: { 'https://m/a': 404, 'https://m/b': 404 },
+    snapshot: { links: [
+      { href: 'https://m/a', text: 'ก', region: 'footer' },
+      { href: 'https://m/b', text: 'ข', region: 'main' },
+    ], images: [], textBlocks: [], modules: [] },
+  };
+  const footerOnly = migLinkStatusIssues(migEnv, new Set(['footer']));
+  assert.equal(footerOnly.length, 1);
+  assert.equal(footerOnly[0].region, 'footer');
+  const all = migLinkStatusIssues(migEnv);
+  assert.equal(all.length, 2);
+});
+
+test('migLinkStatusIssues treats a status URL with no matching link as page-wide', () => {
+  const migEnv = {
+    linkStatuses: { 'https://m/gone': 404 },
+    snapshot: { links: [], images: [], textBlocks: [], modules: [] },
+  };
+  assert.equal(migLinkStatusIssues(migEnv, new Set(['main', 'page-wide'])).length, 1);
+  assert.equal(migLinkStatusIssues(migEnv, new Set(['footer'])).length, 0);
 });

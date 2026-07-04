@@ -8,7 +8,7 @@ const MIG_HOST = 'prod-aem.bangkokbank.com';
 // should have (host swap, /th-TH/ -> /th/, lowercased, no trailing slash).
 // Returns null for links we can't map: external, already-migrated, non-th-TH,
 // or query-string pages (news/dynamic pages restructure and don't follow the rule).
-function expectedKey(href) {
+export function expectedKey(href) {
   let url;
   try { url = new URL(href); } catch { return null; }
   if (url.hostname !== ORIG_HOST) return null;
@@ -19,7 +19,7 @@ function expectedKey(href) {
 }
 
 // Normalize a migrated link to the same host+path key for matching.
-function migKey(href) {
+export function migKey(href) {
   try {
     const u = new URL(href);
     return `${u.hostname}${u.pathname}`.replace(/\/+$/, '').toLowerCase();

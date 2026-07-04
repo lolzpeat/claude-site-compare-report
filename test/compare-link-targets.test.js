@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compareLinkTargets } from '../src/compare/link-targets.js';
+import { compareLinkTargets, expectedKey, migKey } from '../src/compare/link-targets.js';
 
 const env = (links) => ({
   requestedUrl: 'https://x/', blocked: false, error: null, linkStatuses: {},
@@ -67,4 +67,16 @@ test('dedupes by destination and caps at 20 with a High summary beyond the cap',
   assert.equal(summary.length, 1);
   assert.equal(summary[0].severity, 'High');
   assert.equal(summary[0].keyHint, 'link-targets-missing-summary');
+});
+
+test('expectedKey maps th-TH original URL to migrated host+path key', () => {
+  assert.equal(
+    expectedKey('https://www.bangkokbank.com/th-TH/Personal/Loans/'),
+    'prod-aem.bangkokbank.com/th/personal/loans',
+  );
+  assert.equal(expectedKey('https://other.example.com/th-TH/x'), null);
+});
+
+test('migKey normalizes a migrated URL to host+path', () => {
+  assert.equal(migKey('https://prod-aem.bangkokbank.com/th/Personal/'), 'prod-aem.bangkokbank.com/th/personal');
 });

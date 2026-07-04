@@ -5,13 +5,14 @@ const MAX_MISSING_REPORTED = 20;
 // HTTP-status half of the link comparison: report migrated links that 404 / fail to
 // fetch. Shared with the news-detail comparator, which wants this signal WITHOUT the
 // text-transform "missing link" comparison below.
-export function migLinkStatusIssues(migEnv) {
+export function migLinkStatusIssues(migEnv, regions = null) {
   const issues = [];
   const linkFor = (url) => migEnv.snapshot.links.find((l) => l.href === url);
 
   for (const [url, status] of Object.entries(migEnv.linkStatuses ?? {})) {
     const ml = linkFor(url);
     const region = ml?.region ?? 'page-wide';
+    if (regions && !regions.has(region)) continue;
     if (status >= 400) {
       issues.push({
         category: 'broken-link', severity: 'High',
