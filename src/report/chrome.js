@@ -27,7 +27,10 @@ export function aggregateChrome(results) {
   for (const r of comparable) {
     const seen = new Set();
     for (const i of r.chromeIssues ?? []) {
-      const k = issueKey(i);
+      // Zone-aware key: the same defect in header-nav AND footer (footers repeat
+      // header links) must stay two entries, one per zone section. issueKey itself
+      // stays zone-free — systemic.js is a different consumer.
+      const k = `${i.zone ?? 'header-nav'}|${issueKey(i)}`;
       if (!keyToIssue.has(k)) keyToIssue.set(k, i);
       if (seen.has(k)) continue;
       seen.add(k);

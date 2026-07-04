@@ -58,3 +58,22 @@ test('renderChrome escapes issue values', () => {
   const agg = aggregateChrome([result('p1', [issue({ original: '<b>x</b>', migrated: 'y' })])]);
   assert.doesNotMatch(renderChrome(agg), /<b>x<\/b>/);
 });
+
+test('identical issues in different zones stay separate entries and render under both zones', () => {
+  const agg = aggregateChrome([
+    result('p1', [issue({ zone: 'header-nav' })]),
+    result('p2', [issue({ zone: 'footer' })]),
+  ]);
+  assert.equal(agg.entries.length, 2);
+  assert.deepEqual(agg.entries.map((e) => e.count), [1, 1]);
+  assert.deepEqual(agg.entries.map((e) => e.issue.zone).sort(), ['footer', 'header-nav']);
+
+  const html = renderChrome(agg);
+  // The same defect must appear in BOTH zone sections of the rendered page.
+  const headerStart = html.indexOf('ส่วนหัว/เมนูหลัก');
+  const footerStart = html.indexOf('<h2>ส่วนท้าย');
+  const headerSection = html.slice(headerStart, footerStart);
+  const footerSection = html.slice(footerStart);
+  assert.match(headerSection, /Chrome label rendered in English/);
+  assert.match(footerSection, /Chrome label rendered in English/);
+});
