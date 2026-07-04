@@ -61,6 +61,7 @@ Spec/plan/findings: docs/superpowers/. Execution ledger + open product decisions
 - UI is Thai. labels.js maps English contract values (severity/status/category/region) → Thai DISPLAY only; keep contract values + CSS class names English. html.js exports esc + CSS (reused by criteria.js).
 - index.html is a client-side dashboard (search/filter/sort/pagination, baked-in vanilla JS). criteria.html documents criteria/thresholds from LIVE config imports. run-report is pure render — re-run it (no re-capture) after compare/report code changes.
 - Browser-test the report via `python3 -m http.server` in **output/** (not output/report) then open localhost:PORT/report/ — screenshots live in output/shots, which detail pages reference as `../../shots/…` (they sit in report/<slug>/); serving from output/report puts shots outside the web root so images 404. file:// is blocked by the Chrome extension AND the Playwright MCP.
+- Issue descriptions are translated to Thai at RENDER time by src/report/describe.js (regex rules over the comparators' English strings; unmatched → English fallback). When adding a comparator check, add a describe.js rule + test; python3 scripts/describe-coverage.py measures real-data coverage. Value columns shorten known-host URLs via displayValue (html.js) — it returns HTML, never re-esc it.
 
 ## AI visual review
 

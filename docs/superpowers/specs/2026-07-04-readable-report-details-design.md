@@ -1,7 +1,7 @@
 # Readable report details — design
 
 **Date:** 2026-07-04
-**Status:** Draft (awaiting review)
+**Status:** Implemented (2026-07-04)
 **Context:** Issue descriptions shown in the report are technical English
 sentences with embedded URLs/labels (476 distinct strings on the current
 corpus), and the values they embed are duplicated in the ต้นฉบับ/เว็บที่ย้าย
