@@ -295,7 +295,7 @@ const groupTables = (issues) => groupIssues(issues).map((g) => `
 // Statuses in display order (only those present are shown).
 const STATUS_ORDER = ['Passed', 'Failed', 'Not Migrated', 'Retired on Original', 'Capture Failed'];
 
-export function renderIndex(rows, systemicCount, chromeCount = 0) {
+export function renderIndex(rows, systemicCount, chromeCount = 0, sheetNav = []) {
   const statusCounts = {};
   for (const r of rows) statusCounts[r.result.status] = (statusCounts[r.result.status] ?? 0) + 1;
   const presentStatuses = STATUS_ORDER.filter((s) => statusCounts[s]);
@@ -339,9 +339,18 @@ export function renderIndex(rows, systemicCount, chromeCount = 0) {
     ? ` · <a href="systemic.html">${systemicCount} ${T.bannerA} ${T.seeSystemic}</a>`
     : '';
 
+  const sheetNavLine = sheetNav.length > 0
+    ? `<p class="toplinks sheetnav"><a href="../index.html">${T.backToLanding}</a> · ${sheetNav
+        .map((s) => s.current
+          ? `<b>${esc(s.name)}</b>`
+          : `<a href="../${esc(s.slug)}/index.html">${esc(s.name)}</a>`)
+        .join(' · ')}</p>`
+    : '';
+
   return `<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${T.reportTitle}</title>
 <style>${CSS}</style></head><body>
 <h1>${T.reportTitle}</h1>
+${sheetNavLine}
 <p class="toplinks"><a href="criteria.html">เกณฑ์การตรวจสอบ</a>${systemicLink}</p>
 <div class="stats">${statChips}</div>
 <div class="toolbar">

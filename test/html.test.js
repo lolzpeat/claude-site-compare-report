@@ -307,3 +307,21 @@ test('renderSystemic renders Thai descriptions', () => {
   assert.match(html, /สัดส่วนภาษาไทย\/อังกฤษต่างไปจากเดิม/);
   assert.doesNotMatch(html, /balance differs/);
 });
+
+test('renderIndex renders sheet nav strip: landing link, other-sheet link, current as bold', () => {
+  const nav = [
+    { name: 'TH Pages - Categorized', slug: 'th-pages-categorized', current: true },
+    { name: 'News & Media Articles', slug: 'news-and-media-articles', current: false },
+  ];
+  const html = renderIndex([], 0, 0, nav);
+  assert.match(html, /<a href="\.\.\/index\.html">← หน้ารวม<\/a>/);
+  assert.match(html, /<a href="\.\.\/news-and-media-articles\/index\.html">News &amp; Media Articles<\/a>/);
+  assert.match(html, /<b>TH Pages - Categorized<\/b>/);
+  assert.doesNotMatch(html, /<a href="\.\.\/th-pages-categorized\/index\.html"/);
+});
+
+test('renderIndex without sheetNav renders no nav strip (backwards compatible)', () => {
+  const html = renderIndex([], 0, 0);
+  assert.doesNotMatch(html, /หน้ารวม/);
+  assert.doesNotMatch(html, /class="toplinks sheetnav"/);
+});

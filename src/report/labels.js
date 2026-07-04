@@ -3,6 +3,7 @@
 export const T = {
   reportTitle: 'รายงานเปรียบเทียบการย้ายเว็บไซต์',
   back: '← กลับ',
+  backToLanding: '← หน้ารวม',
   original: 'ต้นฉบับ',
   migrated: 'เว็บที่ย้าย',
   ownIssues: 'ปัญหาเฉพาะหน้า', // followed by " (N)"
