@@ -46,6 +46,8 @@ for (const e of entries) {
   groups.get(name).push(e);
 }
 
+const sheetNav = [...groups.keys()].map((n) => ({ name: n, slug: slugify(n) }));
+
 const allRows = [];
 const sheetSummaries = [];
 
@@ -65,7 +67,9 @@ for (const [name, group] of groups) {
     systemicHits: countSystemicHits(e.result.issues, systemicKeys),
   }));
 
-  fs.writeFileSync(`${dir}/index.html`, renderIndex(rows, systemic.length, chromeAgg.entries.length));
+  fs.writeFileSync(`${dir}/index.html`, renderIndex(rows, systemic.length, chromeAgg.entries.length,
+    sheetNav.map((s) => ({ ...s, current: s.slug === slug }))));
+
   fs.writeFileSync(`${dir}/chrome.html`, renderChrome(chromeAgg));
   fs.writeFileSync(`${dir}/chrome.json`, JSON.stringify(chromeAgg, null, 2));
   fs.writeFileSync(`${dir}/criteria.html`, renderCriteria());
