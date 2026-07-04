@@ -79,13 +79,38 @@ const zoneRows = (entries, comparableCount) => entries.map(({ issue, count, page
       <td>${exampleLinks(pageIds)}</td>
     </tr>`).join('');
 
+const brokenStatusLabel = (entry) => {
+  const migrated = entry.issue.migrated ?? '';
+  const m = /→ HTTP (\d+)/.exec(migrated);
+  if (m) return `HTTP ${m[1]}`;
+  if (/→ unreachable/.test(migrated)) return 'เข้าไม่ถึง';
+  return 'อื่น ๆ';
+};
+
+const brokenGroups = (entries, comparableCount) => {
+  const byStatus = new Map();
+  for (const e of entries) {
+    const label = brokenStatusLabel(e);
+    byStatus.set(label, [...(byStatus.get(label) ?? []), e]);
+  }
+  return [...byStatus.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([label, group]) => `
+<details class="cat">
+  <summary>ลิงก์เสีย (${esc(label)}) <span class="chip chip-count">${group.length} ลิงก์</span></summary>
+  <table><tr><th>${th('Category')}</th><th>${th('Severity')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th><th>${th('Found on')}</th><th>${th('Examples')}</th></tr>${zoneRows(group, comparableCount)}</table>
+</details>`).join('');
+};
+
 export function renderChrome(agg) {
   const sections = CHROME_ZONES.map((zone) => {
     const entries = agg.entries.filter((e) => (e.issue.zone ?? 'header-nav') === zone);
-    const table = entries.length
-      ? `<table><tr><th>${th('Category')}</th><th>${th('Severity')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th><th>${th('Found on')}</th><th>${th('Examples')}</th></tr>${zoneRows(entries, agg.comparableCount)}</table>`
+    const broken = entries.filter((e) => e.issue.category === 'broken-link');
+    const rest = entries.filter((e) => e.issue.category !== 'broken-link');
+    const table = rest.length
+      ? `<table><tr><th>${th('Category')}</th><th>${th('Severity')}</th><th>${th('Description')}</th><th>${th('Original')}</th><th>${th('Migrated')}</th><th>${th('Found on')}</th><th>${th('Examples')}</th></tr>${zoneRows(rest, agg.comparableCount)}</table>`
       : `<p class="muted">ไม่พบปัญหาในโซนนี้</p>`;
-    return `<h2>${esc(ZONE_LABEL[zone] ?? zone)}</h2>${statStrip(agg.statsByZone[zone] ?? { orig: 0, mig: 0, matched: 0, missing: 0 })}${table}`;
+    return `<h2>${esc(ZONE_LABEL[zone] ?? zone)}</h2>${statStrip(agg.statsByZone[zone] ?? { orig: 0, mig: 0, matched: 0, missing: 0 })}${table}${brokenGroups(broken, agg.comparableCount)}`;
   }).join('\n');
 
   const extraCss = '.zone-stats{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}';

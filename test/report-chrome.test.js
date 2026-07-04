@@ -77,3 +77,37 @@ test('identical issues in different zones stay separate entries and render under
   assert.match(headerSection, /เมนู\/ข้อความส่วนกลางแสดงเป็นภาษาอังกฤษ/);
   assert.match(footerSection, /เมนู\/ข้อความส่วนกลางแสดงเป็นภาษาอังกฤษ/);
 });
+
+const brokenIssue = (url, status, zone = 'header-nav') => ({
+  category: 'broken-link', severity: 'High', zone,
+  description: `Link returns HTTP ${status}: ${url}`,
+  location: url, original: '—', migrated: `${url} → HTTP ${status}`,
+});
+
+test('renderChrome collapses broken-link entries into per-status groups', () => {
+  const chromeIssues = [
+    brokenIssue('https://prod-aem.bangkokbank.com/th/a', 404),
+    brokenIssue('https://prod-aem.bangkokbank.com/th/b', 404),
+    brokenIssue('https://prod-aem.bangkokbank.com/th/c', 403),
+    issue(), // non-broken text-language entry stays in the main table
+  ];
+  const html = renderChrome(aggregateChrome([result('p1', chromeIssues)]));
+  assert.match(html, /ลิงก์เสีย \(HTTP 404\)[\s\S]*?2/); // group summary with count
+  assert.match(html, /ลิงก์เสีย \(HTTP 403\)/);
+  // groups are collapsed details WITHOUT open
+  assert.match(html, /<details class="cat">\s*<summary>ลิงก์เสีย/);
+  // all three broken URLs still present inside groups
+  for (const p of ['\\/th\\/a', '\\/th\\/b', '\\/th\\/c']) assert.match(html, new RegExp(p));
+  // the non-broken entry still renders in the zone's main table
+  assert.match(html, /เมนู\/ข้อความส่วนกลางแสดงเป็นภาษาอังกฤษ/);
+});
+
+test('renderChrome groups unreachable links separately', () => {
+  const chromeIssues = [{
+    category: 'broken-link', severity: 'Medium', zone: 'footer',
+    description: 'Link unreachable (fetch failed): https://prod-aem.bangkokbank.com/th/x',
+    location: 'x', original: '—', migrated: 'https://prod-aem.bangkokbank.com/th/x → unreachable',
+  }];
+  const html = renderChrome(aggregateChrome([result('p1', chromeIssues)]));
+  assert.match(html, /ลิงก์เสีย \(เข้าไม่ถึง\)/);
+});
