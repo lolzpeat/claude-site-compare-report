@@ -1,7 +1,7 @@
 # site-compare-report
 
 Compares original (www.bangkokbank.com/th-TH) vs migrated (prod-aem.bangkokbank.com/th) pages.
-Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignored, resumable.
+Spec/plan/findings: docs/superpowers/. Execution ledger + open product decisions: .superpowers/sdd/progress.md (gitignored). Input: pages.csv. All output/ is gitignored, resumable.
 
 ## Commands
 
@@ -27,7 +27,7 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 ## Snapshot invariants (src/capture/snapshot.js)
 
 - extractSnapshot runs via page.evaluate — MUST stay self-contained (no imports/closures). Its thresholds are INLINE literals, not config.js: MIN_MODULE_HEIGHT 40 (capture)/80 (compare in modules.js), COARSE_MODULE_MIN_HEIGHT 1000, ICON_MAX_PX 48.
-- snapshot.textBlocks are {text, region} objects (NOT strings) — use `.text`. region ∈ header|nav|footer|main (main = fallback). Content comparators (text/image/module) scope to region==='main'; link comparators stay page-wide.
+- snapshot.textBlocks are {text, region} objects (NOT strings) — use `.text`. region ∈ header|nav|footer|main (main = fallback). Content comparators (text/image/module) scope to region==='main'; generic link comparators scope to CONTENT_REGIONS (main/page-wide) — chrome regions (header/nav/footer) belong to src/compare/chrome.js.
 - Modules: chrome-aware descent excludes header/nav/footer; a coarse blob (≥1000px, ≥2 h2) is split into one module per h2 (h3 are sub-points). Original pages are flat (no <main>); missing-module still has residual false positives from flat-vs-segmented asymmetry — see docs/superpowers/specs/2026-07-02-pilot-findings.md.
 - Original flat pages leak the cookie-consent block (~2373 chars, identical across pages) into region 'main' — any "longest main block" / text-length heuristic will grab it (why the News-Detail content check is presence-only, not a length diff vs original).
 
@@ -44,6 +44,12 @@ Spec/plan/findings: docs/superpowers/. Input: pages.csv. All output/ is gitignor
 - Issue shape: {category, severity, description, location, original?, migrated?}; comparators set original/migrated to the concrete before/after values, report shows them as columns (— when absent); zone?: header-nav|footer|hero|main (absent = main)
 - comparePair returns { status, issues, chromeIssues, chromeStats }; status from issues only. Generic link comparators are scoped to CONTENT_REGIONS (main/page-wide); chrome regions (header/nav/footer) belong to src/compare/chrome.js.
 - AI visual review: write output/issues/ai/<id>.json as {pairId, issues:[{category,severity,description,location}]}; original/migrated optional; run-report merges it
+
+## Zone checks (chrome/hero) gotchas
+
+- Chrome link matching: migrated AEM chrome links point to /en/... (not /th/...), so URL-key pairing matches ~1/147 — chrome per-link label checks (text-language/menu-label) are mostly dormant on real data; the English-chrome defect surfaces as the link-target zone-coverage summary at full reach instead. Pending decision: language-agnostic fallback match (see .superpowers/sdd/progress.md).
+- Chrome aggregation scale: News sheet chrome.json ≈ 846 per-URL broken-link entries + full pageIds arrays (~2.7MB/sheet in the public deploy) — cap pageIds before the corpus grows; rendering groups nothing yet (846-row table).
+- Hero check: fires only when orig's first main module has imageFiles (15 hits corpus-wide); observed ~20% FP — bogus "image missing" on pages where the image exists (module-boundary quirk).
 
 ## Systemic aggregation (run-report)
 
