@@ -4,6 +4,35 @@ export const esc = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 
+const KNOWN_HOSTS = new Set(['www.bangkokbank.com', 'prod-aem.bangkokbank.com']);
+const URLISH_RE = /(https?:\/\/[^\s]+|(?:www|prod-aem)\.bangkokbank\.com\/[^\s]+)/g;
+const MAX_URL_TEXT = 60;
+
+const midEllipsis = (s) =>
+  s.length <= MAX_URL_TEXT ? s : `${s.slice(0, 32)}…${s.slice(-24)}`;
+
+const urlAnchor = (raw) => {
+  const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  let url;
+  try { url = new URL(href); } catch { return esc(raw); }
+  if (!KNOWN_HOSTS.has(url.hostname)) return esc(raw);
+  const text = midEllipsis((url.pathname + url.search) || '/');
+  return `<a href="${esc(href)}" title="${esc(raw)}" target="_blank" rel="noopener">${esc(text)}</a>`;
+};
+
+// Value-column renderer: shortens known-host URLs to clickable paths, escapes
+// everything else. Returns HTML — callers must NOT wrap the result in esc().
+export function displayValue(value) {
+  const s = String(value ?? '—');
+  let out = '';
+  let last = 0;
+  for (const m of s.matchAll(URLISH_RE)) {
+    out += esc(s.slice(last, m.index)) + urlAnchor(m[0]);
+    last = m.index + m[0].length;
+  }
+  return out + esc(s.slice(last));
+}
+
 const sevText = (sev) => SEVERITY_LABEL[sev] ?? sev;
 const statusText = (s) => STATUS_LABEL[s] ?? s;
 const catText = (c) => CATEGORY_LABEL[c] ?? c;

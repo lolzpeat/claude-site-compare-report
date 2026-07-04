@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderIndex, renderDetail, renderSystemic, renderLanding } from '../src/report/html.js';
+import { renderIndex, renderDetail, renderSystemic, renderLanding, displayValue } from '../src/report/html.js';
 
 const pair = { id: 'my-home', originalUrl: 'https://x/o', migratedUrl: 'https://y/m', category: 'Personal', subCategory: 'My Home' };
 const result = {
@@ -230,4 +230,39 @@ test('renderIndex shows a chrome stat chip linking to chrome.html when chromeCou
 test('renderLanding shows per-sheet chrome count when present', () => {
   const html = renderLanding([{ name: 'S', slug: 's', total: 1, statusCounts: { Passed: 1 }, systemicCount: 0, chromeCount: 4 }]);
   assert.match(html, /4 ปัญหาโซนส่วนกลาง/);
+});
+
+test('displayValue shortens known-host URLs to a path anchor with full href/title', () => {
+  const html = displayValue('https://prod-aem.bangkokbank.com/th/personal/loans');
+  assert.match(html, /<a href="https:\/\/prod-aem\.bangkokbank\.com\/th\/personal\/loans"/);
+  assert.match(html, />\/th\/personal\/loans</); // text = path only, host stripped
+  assert.match(html, /title="https:\/\/prod-aem\.bangkokbank\.com\/th\/personal\/loans"/);
+});
+
+test('displayValue middle-ellipsizes long known-host paths', () => {
+  const long = `https://prod-aem.bangkokbank.com/-/media/files/personal/save-and-invest/mutual-funds/announcements/very-long-file-name-2568.pdf`;
+  const html = displayValue(long);
+  assert.match(html, /…/);
+  assert.doesNotMatch(html, />\/-\/media\/files\/personal\/save-and-invest\/mutual-funds\/announcements\/very-long-file-name-2568\.pdf</);
+  assert.match(html, new RegExp(`href="${long.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}"`)); // full href kept
+});
+
+test('displayValue shortens scheme-less host+path keys and keeps suffixes', () => {
+  const html = displayValue('prod-aem.bangkokbank.com/th/help-center (expected)');
+  assert.match(html, />\/th\/help-center</);
+  assert.match(html, /\(expected\)/);
+  assert.match(html, /href="https:\/\/prod-aem\.bangkokbank\.com\/th\/help-center"/);
+});
+
+test('displayValue shortens only the URL part of mixed status values', () => {
+  const html = displayValue('https://prod-aem.bangkokbank.com/th/privacy → HTTP 404');
+  assert.match(html, />\/th\/privacy</);
+  assert.match(html, /→ HTTP 404/);
+});
+
+test('displayValue leaves unknown-host URLs and plain text unchanged (escaped)', () => {
+  assert.equal(displayValue('https://y/dead → HTTP 404'), 'https://y/dead → HTTP 404');
+  assert.equal(displayValue('กองทุนรวม'), 'กองทุนรวม');
+  assert.equal(displayValue('<b>x</b>'), '&lt;b&gt;x&lt;/b&gt;');
+  assert.equal(displayValue(null), '—');
 });
