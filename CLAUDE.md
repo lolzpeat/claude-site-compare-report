@@ -15,6 +15,8 @@ Spec/plan/findings: docs/superpowers/. Execution ledger + open product decisions
 ## Report structure (per-sheet)
 
 - run-report groups pages by their `sheet` column. Output: `output/report/index.html` = landing (one card per sheet) → `output/report/<slug>/index.html` = that sheet's dashboard, with its own systemic.html, criteria.html, chrome.html, `<id>.html` detail pages, systemic.json, chrome.json. Relative links (index/systemic/criteria/<id>.html) resolve within each subdir — renderIndex/renderDetail/renderSystemic are dir-agnostic; only renderLanding (html.js) is new. Systemic is aggregated per-sheet.
+- Sheet dashboards carry a nav strip (← หน้ารวม + cross-sheet links, current sheet bold) via renderIndex's 4th param sheetNav [{name, slug, current}] — built in run-report from the groups map; default [] renders nothing.
+- rtk hook rewrites `find` → `rtk find`, which rejects compound predicates (`!`, `-delete`, `-exec`) — use a shell loop or `command find` instead.
 
 ## WAF gotchas (cost us a failed batch run)
 
