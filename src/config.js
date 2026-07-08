@@ -24,3 +24,16 @@ export const DIRS = {
   aiIssues: 'output/issues/ai',
   report: 'output/report',
 };
+
+// Live tracking spreadsheet — a native Google Sheet, edited cell-by-cell via the
+// Sheets API v4 (see scripts/sync-sheet-status.js). Superseded a Drive-hosted .xlsx
+// copy of the same data (fileId 1PEI69vpymUstbpmFFuGeqvEni2gBogru) — that file no
+// longer receives writes; this spreadsheet is now the single source of truth.
+export const GOOGLE_SPREADSHEET_ID = '1K2t3E8tYkL7ff3IK8j3j09I6zMIc_mHnES1L3SVwl2w';
+export const SERVICE_ACCOUNT_KEY_PATH = '.secrets/sheet-sync-key.json';
+// Header row 3, data from row 4. URL column is always the sheet's join key against
+// pages.csv's originalUrl. Column numbers are 1-indexed (1=A, 6=F, ...).
+export const SHEET_TABS = {
+  'TH Pages - Categorized': { headerRow: 3, urlCol: 1, statusCol: 6, openIssuesCol: 7 },
+  'News & Media Articles': { headerRow: 3, urlCol: 1, statusCol: 4, openIssuesCol: 5 },
+};

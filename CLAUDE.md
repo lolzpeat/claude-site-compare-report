@@ -5,7 +5,7 @@ Spec/plan/findings: docs/superpowers/. Execution ledger + open product decisions
 
 ## Commands
 
-- `npm test` — node:test suite (must stay green; `node --test test/` breaks on newer Node, use `npm test`)
+- `npm test` — node:test suite (must stay green; `node --test test/` breaks on newer Node, use `npm test`). Needs `npx playwright install chromium` once — without it, capture.test.js/link-check.test.js/snapshot.test.js hang forever (chromium.launch() never resolves) with zero TAP output, silently blocking the whole run. If it hangs, run `node --test $(ls test/*.test.js | grep -vE "capture.test.js|link-check.test.js|snapshot.test.js")` to get a signal on everything else.
 - `python3 scripts/gen-pages.py > pages.csv` — regenerate pages.csv from the master workbook (input/BBL_pages.xlsx, 2 sheets → 1460 rows). Cols: id,originalUrl,migratedUrl,category,subCategory,sheet. IDs: categorized = migrated path slug (parent-leaf fallback on clash); news = full GUID (news-detail-<guid>).
 - `node src/run-capture.js [--only <id>] [--sheet "<name>"]` — capture (HEADED system Chrome; skips already-captured, re-run to retry failures). Auto cool-down on WAF block (WAF_COOLDOWN_MS ×streak, capped ×3).
 - `node src/run-compare.js [--sheet "<name>"]` → `node src/run-report.js [--sheet "<name>"]` — deterministic diff, then per-sheet HTML dashboards + output/sheet-update.csv
@@ -69,6 +69,14 @@ Spec/plan/findings: docs/superpowers/. Execution ledger + open product decisions
 ## AI visual review
 
 - For homogeneous batches (many pages sharing one template, e.g. the Save & Invest debentures), review a few representatives per template cluster + any outliers, not every page — the systemic defects repeat. Note which pages you did/didn't view.
+
+## Live tracking sheet sync (scripts/sync-sheet-status.js)
+
+- Writes to a live Google Sheet via Sheets API v4 + a service account (GCP project `bbl-site-compare`, SA `sheet-sync@bbl-site-compare.iam.gserviceaccount.com`, key at `.secrets/sheet-sync-key.json`, gitignored). The sheet must be shared to that SA email as Editor — there's no Drive-permission tool to automate this step.
+- Target = `GOOGLE_SPREADSHEET_ID` in src/config.js (a native Google Sheet). A prior Drive-hosted .xlsx copy (fileId `1PEI69...`) is superseded — no longer written to.
+- Two columns synced per pages.csv row (matched by original URL): "Automatiion Validation Status" (sic) is STICKY — blank/"Not Started" → "1st Validation" once `output/issues/det/<id>.json` exists, never overwrites a further-along value. "Open Issues" is ALWAYS refreshed (Thai category-count summary, src/report/sheet-summary.js) so fixed issues disappear from it too.
+- Usage: dry-run by default; `--write` to apply; `--sheet "<name>"` / `--limit N` to scope. Always dry-run and eyeball the diff before `--write` on a full sheet — one run can touch 800+ rows.
+- Avoid the `xlsx` npm package for any future Drive-hosted (non-native) .xlsx editing — stuck at v0.18.5 on the npm registry with unpatched high-severity CVEs (SheetJS moved newer builds off npm). Use `exceljs` instead.
 
 ## Scale-up
 
